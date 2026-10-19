@@ -1,0 +1,318 @@
+<!-- ═══════════════════════════════════════════════════════════════
+  ORDERING ADD-ON for Pinocchio · LiveDish-AI
+  PASTE THIS WHOLE BLOCK right before </body> (after your existing <script>).
+  No other edits needed. Change the CONFIG values at the top of the script.
+═══════════════════════════════════════════════════════════════ -->
+<style>
+/* ORDERING: add / stepper */
+.add-row{margin-top:10px}
+.add-ctl{width:100%}
+.ord-add{width:100%;min-height:40px;border-radius:999px;border:1.5px solid var(--red-700);background:rgba(255,255,255,.55);color:var(--red-800);font:700 12px var(--f-sans);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s var(--ease);-webkit-tap-highlight-color:transparent}
+.ord-add:hover{background:var(--red-grad);color:#fff;border-color:transparent}
+.ord-step{display:flex;align-items:center;justify-content:space-between;min-height:40px;border-radius:999px;background:var(--red-grad);color:#fff;padding:3px;box-shadow:0 6px 16px rgba(108,6,11,.3)}
+.ord-step button{width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.22);color:#fff;font:700 18px/1 var(--f-sans);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ord-step button:active{transform:scale(.9)}
+.ord-step span{font:800 15px var(--f-brand);min-width:30px;text-align:center}
+.modal-body .add-row{margin-top:16px}
+/* ORDERING: floating bar */
+.ord-bar{position:fixed;left:50%;bottom:max(env(safe-area-inset-bottom),12px);transform:translateX(-50%);width:calc(100% - 24px);max-width:520px;z-index:800;display:flex;gap:10px;transition:transform .4s var(--ease),opacity .3s}
+.ord-bar.hide{transform:translate(-50%,160%);opacity:0;pointer-events:none}
+.ord-bell{flex:0 0 auto;height:54px;padding:0 16px;border-radius:999px;display:flex;align-items:center;gap:7px;cursor:pointer;color:var(--red-900);font:700 12px var(--f-sans);background:rgba(255,250,240,.94);border:1px solid rgba(255,255,255,.9);box-shadow:0 10px 28px rgba(108,6,11,.28)}
+.ord-bell span{font-size:18px}
+.ord-pill{flex:1;min-width:0;height:54px;border-radius:999px;background:var(--red-grad);color:#fff;border:1px solid rgba(255,255,255,.35);display:flex;align-items:center;gap:10px;padding:0 8px;cursor:pointer;box-shadow:0 12px 30px rgba(108,6,11,.45),inset 0 1px 0 rgba(255,255,255,.3)}
+.ord-count{min-width:38px;height:38px;border-radius:50%;background:var(--gold-grad);color:var(--red-900);display:grid;place-items:center;font:800 15px var(--f-brand)}
+.ord-label{flex:1;text-align:left;font:700 13px var(--f-sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ord-total{font:700 20px var(--f-display);color:var(--gold-lt);padding-right:10px}
+.ord-pill.bump{animation:ordbump .35s var(--ease)}
+@keyframes ordbump{50%{transform:scale(1.04)}}
+@media(max-width:400px){.ord-bell b{display:none}.ord-bell{padding:0 15px}}
+.stage{padding-bottom:80px}
+.site-footer{padding-bottom:calc(2.4rem + 84px + env(safe-area-inset-bottom))}
+/* ORDERING: sheet */
+.ord-overlay{display:none;position:fixed;inset:0;z-index:9500;background:rgba(60,2,6,.55);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);align-items:flex-end;justify-content:center}
+@media(min-width:560px){.ord-overlay{align-items:center;padding:1.5rem}}
+.ord-overlay.open{display:flex;animation:fade .25s ease}
+.ord-sheet{width:100%;max-width:520px;max-height:92svh;display:flex;flex-direction:column;overflow:hidden;color:var(--ink);background:linear-gradient(160deg,rgba(255,252,244,.97),rgba(255,246,228,.94));border-radius:30px 30px 0 0;border:1.5px solid rgba(255,255,255,.85);border-bottom:none;box-shadow:0 -14px 70px rgba(60,2,6,.5),inset 0 1px 0 #fff;animation:sheet .45s var(--ease)}
+@media(min-width:560px){.ord-sheet{border-radius:30px;border-bottom:1.5px solid rgba(255,255,255,.85)}}
+.ord-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px 8px}
+.ord-title{font:700 26px var(--f-display);color:var(--red-800)}
+.ord-x{width:38px;height:38px;border-radius:50%;border:1.5px solid #fff;background:rgba(255,255,255,.85);color:var(--red-700);font:700 15px var(--f-sans);cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.ord-body{overflow-y:auto;overscroll-behavior:contain;padding:0 20px 8px;flex:1}
+.ord-fields{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin:6px 0 10px}
+.ord-field label{display:block;font:700 10px var(--f-sans);letter-spacing:.1em;text-transform:uppercase;color:var(--red-700);margin-bottom:4px}
+.ord-field input{width:100%;height:42px;border-radius:14px;border:1.5px solid rgba(169,125,44,.45);background:#fff;padding:0 12px;font:500 14px var(--f-sans);color:var(--ink);outline:none}
+.ord-field input:focus{border-color:var(--red-600);box-shadow:0 0 0 3px rgba(192,18,26,.15)}
+.ord-field.err input{border-color:var(--red-600);background:#fff1f1}
+.ord-row{display:grid;grid-template-columns:48px 1fr 108px;gap:6px 10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(169,125,44,.28)}
+.ord-th{width:48px;height:48px;border-radius:12px;overflow:hidden;background:#fbf3e4;display:grid;place-items:center;font-size:22px}
+.ord-th img{width:100%;height:100%;object-fit:cover;display:block}
+.ord-info{min-width:0}
+.ord-info b{display:block;font:700 15px var(--f-display);color:var(--red-800);line-height:1.25}
+.ord-info small{font:600 12px var(--f-sans);color:var(--ink-soft)}
+.ord-note{grid-column:2/4;width:100%;height:34px;border-radius:10px;border:1px solid rgba(169,125,44,.4);background:rgba(255,255,255,.8);padding:0 10px;font:400 12px var(--f-sans);color:var(--ink);outline:none}
+.ord-note:focus{border-color:var(--red-600)}
+.ord-empty{text-align:center;padding:2rem .5rem;font:italic 400 18px var(--f-display);color:var(--ink-mid)}
+.ord-foot{padding:12px 20px calc(16px + env(safe-area-inset-bottom));border-top:1px solid rgba(169,125,44,.4);background:rgba(255,248,232,.95)}
+.ord-line{display:flex;justify-content:space-between;font:500 13px var(--f-sans);color:var(--ink-mid);margin-bottom:3px}
+.ord-line.total{font:700 26px var(--f-display);color:var(--red-700);margin:6px 0 8px}
+.ord-err{color:var(--red-600);font:600 12px var(--f-sans);margin-bottom:6px}
+.ord-err:empty{display:none}
+.ord-send{width:100%;min-height:50px;border-radius:999px;border:1px solid rgba(255,250,224,.85);background:var(--gold-grad);color:var(--red-900);font:700 13px var(--f-sans);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 26px rgba(108,6,11,.3),inset 0 1.5px 0 rgba(255,255,255,.78)}
+.ord-send:disabled{opacity:.5;cursor:not-allowed}
+.ord-sec{display:flex;gap:8px;margin-top:10px}
+.ord-sec button{flex:1;min-height:40px;border-radius:999px;border:1px solid rgba(163,13,20,.35);background:rgba(255,255,255,.75);color:var(--red-800);font:700 11.5px var(--f-sans);cursor:pointer}
+.ord-toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);z-index:9600;max-width:88vw;background:rgba(20,4,5,.92);color:var(--gold-lt);border:1px solid rgba(217,178,95,.5);padding:11px 20px;border-radius:999px;font:600 12.5px var(--f-sans);text-align:center;opacity:0;pointer-events:none;transition:all .3s var(--ease)}
+.ord-toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+
+<script>
+(() => {
+/* ───────── CONFIG ───────── */
+const CFG = {
+  WHATSAPP: '919999999999',   // ← restaurant WhatsApp number: country code + number, digits only (India: 91XXXXXXXXXX)
+  RESTAURANT: 'Pinocchio',
+  TAX_PERCENT: 0,             // set 5 for 5% GST etc. (0 = hidden)
+  TAX_LABEL: 'GST',
+  MAX_QTY: 20,
+  KEY: 'pinocchio_cart_v1',
+  TKEY: 'pinocchio_table'
+};
+
+/* ───────── TEXT (English + Italian; other languages fall back to English) ───────── */
+const S = {
+  en: { add:'Add to order', order:'Your order', waiter:'Call waiter', bill:'Request bill', table:'Table number', name:'Your name (optional)',
+        note:'Note: less spicy, no onion…', subtotal:'Subtotal', total:'Total', send:'Send order via WhatsApp', clear:'Clear order',
+        empty:'Your order is empty. Add dishes from the menu.', needTable:'Please enter your table number.',
+        opening:'Opening WhatsApp. Tap Send there to confirm.', each:'each', dec:'Decrease', inc:'Increase', close:'Close', tablePh:'e.g. 5' },
+  it: { add:'Aggiungi', order:'Il tuo ordine', waiter:'Chiama cameriere', bill:'Richiedi conto', table:'Numero tavolo', name:'Il tuo nome (facoltativo)',
+        note:'Nota: meno piccante, senza cipolla…', subtotal:'Subtotale', total:'Totale', send:'Invia ordine su WhatsApp', clear:'Svuota',
+        empty:'Il tuo ordine è vuoto. Aggiungi piatti dal menu.', needTable:'Inserisci il numero del tavolo.',
+        opening:'Apro WhatsApp. Premi Invia per confermare.', each:'cad.', dec:'Diminuisci', inc:'Aumenta', close:'Chiudi', tablePh:'es. 5' }
+};
+const L = k => ((S[currentLang] || {})[k]) ?? S.en[k];
+const inr = n => '₹' + n.toLocaleString('en-IN');
+
+/* ───────── STATE ───────── */
+let cart = {}, table = '', cname = '';
+try { cart = JSON.parse(localStorage.getItem(CFG.KEY) || '{}') || {}; } catch (e) {}
+try {
+  const fromURL = new URLSearchParams(location.search).get('table');
+  table = (fromURL || localStorage.getItem(CFG.TKEY) || '');
+  if (fromURL) localStorage.setItem(CFG.TKEY, fromURL);
+} catch (e) {}
+table = table.replace(/[^\w\- ]/g, '').slice(0, 10);
+
+const save = () => { try { localStorage.setItem(CFG.KEY, JSON.stringify(cart)); localStorage.setItem(CFG.TKEY, table); } catch (e) {} };
+const dishOf = id => allDishes.find(d => d.id === id);
+const enName = d => { const i = rawRows.findIndex((r, ix) => (r.id || `dish-${ix}`) === d.id); return i >= 0 ? (rawRows[i].name || d.name) : d.name; };
+const qty = id => (cart[id] && cart[id].q) || 0;
+const lines = () => Object.entries(cart).map(([id, c]) => ({ d: dishOf(id), c })).filter(x => x.d && x.d.available);
+const totals = () => {
+  const sub = lines().reduce((s, x) => s + x.d.price * x.c.q, 0);
+  const tax = CFG.TAX_PERCENT ? Math.round(sub * CFG.TAX_PERCENT / 100) : 0;
+  return { sub, tax, total: sub + tax, count: lines().reduce((s, x) => s + x.c.q, 0) };
+};
+function setQty(id, q) {
+  if (q <= 0) delete cart[id];
+  else cart[id] = { q: Math.min(q, CFG.MAX_QTY), n: (cart[id] && cart[id].n) || '' };
+  save(); refresh();
+  const p = document.getElementById('ord-open'); if (p) { p.classList.remove('bump'); void p.offsetWidth; p.classList.add('bump'); }
+}
+
+/* ───────── UI BUILD ───────── */
+document.body.insertAdjacentHTML('beforeend', `
+<div class="ord-bar hide" id="ord-bar">
+  <button type="button" class="ord-bell" id="ord-bell"><span>🛎</span><b id="ord-bell-t"></b></button>
+  <button type="button" class="ord-pill" id="ord-open"><span class="ord-count" id="ord-count">0</span><span class="ord-label" id="ord-label"></span><span class="ord-total" id="ord-total">₹0</span></button>
+</div>
+<div class="ord-overlay" id="ord-overlay" role="dialog" aria-modal="true">
+  <div class="ord-sheet">
+    <div class="ord-head"><h2 class="ord-title" id="ord-title"></h2><button type="button" class="ord-x" id="ord-x">✕</button></div>
+    <div class="ord-body">
+      <div class="ord-fields">
+        <div class="ord-field" id="f-table"><label for="ord-table" id="lbl-table"></label><input id="ord-table" inputmode="numeric" maxlength="10" autocomplete="off"></div>
+        <div class="ord-field"><label for="ord-name" id="lbl-name"></label><input id="ord-name" maxlength="40" autocomplete="name"></div>
+      </div>
+      <div id="ord-list"></div>
+    </div>
+    <div class="ord-foot">
+      <div id="ord-totals"></div>
+      <div class="ord-err" id="ord-err"></div>
+      <button type="button" class="ord-send" id="ord-send"></button>
+      <div class="ord-sec"><button type="button" id="ord-waiter"></button><button type="button" id="ord-bill"></button><button type="button" id="ord-clear"></button></div>
+    </div>
+  </div>
+</div>
+<div class="ord-toast" id="ord-toast"></div>`);
+
+const $o = id => document.getElementById(id);
+const toast = msg => { const t = $o('ord-toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 3000); };
+
+function applyText() {
+  $o('ord-bell-t').textContent = L('waiter');
+  $o('ord-title').textContent = L('order');
+  $o('lbl-table').textContent = L('table');
+  $o('lbl-name').textContent = L('name');
+  $o('ord-table').placeholder = L('tablePh');
+  $o('ord-send').textContent = L('send');
+  $o('ord-waiter').textContent = '🛎 ' + L('waiter');
+  $o('ord-bill').textContent = '🧾 ' + L('bill');
+  $o('ord-clear').textContent = L('clear');
+  $o('ord-x').setAttribute('aria-label', L('close'));
+  $o('ord-table').value = table;
+  $o('ord-name').value = cname;
+}
+
+/* ───────── RENDER ───────── */
+const ctlInner = id => {
+  const q = qty(id);
+  return q
+    ? `<div class="ord-step"><button type="button" data-act="dec" aria-label="${esc(L('dec'))}">−</button><span>${q}</span><button type="button" data-act="inc" aria-label="${esc(L('inc'))}">+</button></div>`
+    : `<button type="button" class="ord-add" data-act="add">+ ${esc(L('add'))}</button>`;
+};
+function renderCtls() { document.querySelectorAll('.add-ctl').forEach(el => { if (el.dataset.id) el.innerHTML = ctlInner(el.dataset.id); }); }
+
+function renderBar() {
+  const t = totals();
+  $o('ord-bar').classList.toggle('hide', !allDishes.length);
+  $o('ord-count').textContent = t.count;
+  $o('ord-label').textContent = L('order');
+  $o('ord-total').textContent = inr(t.total);
+}
+
+function renderSheet() {
+  const ls = lines(), t = totals();
+  $o('ord-list').innerHTML = ls.length ? ls.map(({ d, c }) => `
+    <div class="ord-row" data-id="${esc(d.id)}">
+      <div class="ord-th">${d.posterPath ? `<img src="${esc(d.posterPath)}" alt="" onerror="this.remove()">` : d.emoji}</div>
+      <div class="ord-info"><b>${esc(d.name)}</b><small>${inr(d.price)} ${esc(L('each'))} · ${inr(d.price * c.q)}</small></div>
+      <div class="ord-step"><button type="button" data-act="dec" aria-label="${esc(L('dec'))}">−</button><span>${c.q}</span><button type="button" data-act="inc" aria-label="${esc(L('inc'))}">+</button></div>
+      <input class="ord-note" data-note maxlength="80" placeholder="${esc(L('note'))}" value="${esc(c.n || '')}">
+    </div>`).join('') : `<div class="ord-empty">${esc(L('empty'))}</div>`;
+  $o('ord-totals').innerHTML = ls.length
+    ? `<div class="ord-line"><span>${esc(L('subtotal'))}</span><span>${inr(t.sub)}</span></div>`
+      + (t.tax ? `<div class="ord-line"><span>${esc(CFG.TAX_LABEL)} ${CFG.TAX_PERCENT}%</span><span>${inr(t.tax)}</span></div>` : '')
+      + `<div class="ord-line total"><span>${esc(L('total'))}</span><span>${inr(t.total)}</span></div>`
+    : '';
+  $o('ord-send').disabled = !ls.length;
+  $o('ord-clear').style.display = ls.length ? '' : 'none';
+}
+
+function refresh() { renderCtls(); renderBar(); if ($o('ord-overlay').classList.contains('open')) renderSheet(); }
+
+/* ───────── INJECT ADD BUTTONS INTO EXISTING UI ───────── */
+function inject() {
+  document.querySelectorAll('.menu-card:not(.unavailable) .card-body').forEach(body => {
+    if (body.querySelector('.add-row')) return;
+    const id = body.closest('.menu-card').dataset.id;
+    const row = document.createElement('div');
+    row.className = 'add-row';
+    row.innerHTML = `<div class="add-ctl" data-id="${esc(id)}">${ctlInner(id)}</div>`;
+    body.appendChild(row);
+  });
+  renderBar();
+}
+new MutationObserver(inject).observe($o('items-container') || document.body, { childList: true, subtree: true });
+
+// Showcase card (scroll-driven 3D)
+const sRow = document.createElement('div'); sRow.className = 'add-row'; sRow.innerHTML = '<div class="add-ctl"></div>';
+$o('sc-swap').querySelector('.sc-foot').after(sRow);
+const sCtl = sRow.firstElementChild;
+const _setShowDish = setShowDish;
+setShowDish = function (idx) {
+  _setShowDish(idx);
+  const d = showList[idx]; if (!d) return;
+  sCtl.dataset.id = d.id; sCtl.innerHTML = ctlInner(d.id);
+};
+
+// Dish detail modal
+const mRow = document.createElement('div'); mRow.className = 'add-row'; mRow.innerHTML = '<div class="add-ctl"></div>';
+document.querySelector('.modal-footer').after(mRow);
+const mCtl = mRow.firstElementChild;
+const _openModal = openModal;
+openModal = function (id, auto) {
+  _openModal(id, auto);
+  mCtl.dataset.id = id; mCtl.innerHTML = ctlInner(id);
+};
+
+/* ───────── EVENTS ───────── */
+// Capture phase so the card's own click (open modal) doesn't fire
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-act]');
+  if (!b) return;
+  const host = b.closest('[data-id]'); if (!host) return;
+  e.stopPropagation(); e.preventDefault();
+  const id = host.dataset.id, q = qty(id), a = b.dataset.act;
+  if (a === 'add') setQty(id, 1);
+  else if (a === 'inc') setQty(id, q + 1);
+  else if (a === 'dec') setQty(id, q - 1);
+}, true);
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('.add-ctl')) e.stopPropagation();
+}, true);
+
+$o('ord-list').addEventListener('input', e => {
+  if (!e.target.matches('[data-note]')) return;
+  const id = e.target.closest('.ord-row').dataset.id;
+  if (cart[id]) { cart[id].n = e.target.value.slice(0, 80); save(); }
+});
+$o('ord-table').addEventListener('input', e => {
+  table = e.target.value.replace(/[^\w\- ]/g, '').slice(0, 10); e.target.value = table; save();
+  $o('f-table').classList.remove('err'); $o('ord-err').textContent = '';
+});
+$o('ord-name').addEventListener('input', e => { cname = e.target.value.slice(0, 40); });
+
+const openSheet = () => { renderSheet(); $o('ord-overlay').classList.add('open'); document.body.style.overflow = 'hidden'; };
+const closeSheet = () => { $o('ord-overlay').classList.remove('open'); document.body.style.overflow = ''; };
+$o('ord-open').addEventListener('click', openSheet);
+$o('ord-x').addEventListener('click', closeSheet);
+$o('ord-overlay').addEventListener('click', e => { if (e.target === $o('ord-overlay')) closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $o('ord-overlay').classList.contains('open')) closeSheet(); });
+
+function needTable() {
+  if (table.trim()) return false;
+  openSheet();
+  $o('f-table').classList.add('err');
+  $o('ord-err').textContent = L('needTable');
+  $o('ord-table').focus();
+  return true;
+}
+function sendWA(text) {
+  const url = `https://wa.me/${CFG.WHATSAPP}?text=${encodeURIComponent(text)}`;
+  if (!window.open(url, '_blank')) location.href = url;
+}
+function orderText() {
+  const t = totals();
+  const rows = lines().map(({ d, c }, i) =>
+    `${i + 1}. ${enName(d)} x ${c.q} = ${inr(d.price * c.q)}` + (c.n ? `\n    Note: ${c.n}` : ''));
+  return [
+    `*New order: ${CFG.RESTAURANT}*`,
+    `Table: ${table}` + (cname ? `\nName: ${cname}` : ''),
+    '',
+    ...rows,
+    '',
+    t.tax ? `Subtotal: ${inr(t.sub)}\n${CFG.TAX_LABEL} ${CFG.TAX_PERCENT}%: ${inr(t.tax)}` : '',
+    `*Total: ${inr(t.total)}*`
+  ].filter((x, i, a) => x !== '' || a[i - 1] !== '').join('\n');
+}
+$o('ord-send').addEventListener('click', () => {
+  if (!lines().length || needTable()) return;
+  sendWA(orderText()); toast(L('opening'));
+});
+const service = kind => {
+  if (needTable()) return;
+  sendWA(kind === 'bill'
+    ? `🧾 *${CFG.RESTAURANT}*: Table ${table} is requesting the bill.`
+    : `🛎 *${CFG.RESTAURANT}*: Table ${table} needs a waiter.`);
+  toast(L('opening'));
+};
+$o('ord-waiter').addEventListener('click', () => service('waiter'));
+$o('ord-bill').addEventListener('click', () => service('bill'));
+$o('ord-bell').addEventListener('click', () => service('waiter'));
+$o('ord-clear').addEventListener('click', () => { cart = {}; save(); refresh(); });
+
+$o('lang-select').addEventListener('change', () => { applyText(); refresh(); });
+
+applyText(); inject(); refresh();
+})();
+</script>
