@@ -1749,7 +1749,7 @@ async function buildSpreadGLB(dishes) {
   }
 
   const maxW = Math.max(...slots.map(s => s.footprint));
-  const GAP = 0.003;                            // 0.3 cm between dishes → plates sit almost touching
+  const GAP = 0.0003;                            // 0.3 cm between dishes → plates sit almost touching
   const pitch = maxW + GAP;                     // centre-to-centre distance for the ring layout
   const n = slots.length;
   if (n === 2) {
