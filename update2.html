@@ -5,13 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
 <meta name="theme-color" content="#e8c874" />
 <title>3D AR Menu for Every Cuisine · LiveDish-AI</title>
-<meta name="description" content="Immersive 3D AR menus for every type of cuisine — scroll-driven 3D dish previews, Combo & Whole-Table AR spreads, AI recommendations and AR table preview. Powered by LiveDish-AI." />
+<meta name="description" content="Immersive 3D AR menus for every type of cuisine — scroll-driven 3D dish previews, AI recommendations and AR table preview. Powered by LiveDish-AI." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://unpkg.com" />
-<link rel="preconnect" href="https://esm.sh" />
-<link rel="modulepreload" href="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" />
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Outfit:wght@500;700;800&family=Inter:wght@300;400;500;600&family=Noto+Sans+Kannada:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600&family=Noto+Sans+Malayalam:wght@400;500;600&family=Noto+Sans+Telugu:wght@400;500;600&display=swap" rel="stylesheet" />
+<!-- Import map (must come before any module script). Used lazily by the Whole-Table AR feature to merge several dishes into one 3D scene. -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<link rel="modulepreload" href="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" />
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -37,8 +45,6 @@ model-viewer::part(default-ar-button),model-viewer::part(default-exit-webxr-ar-b
 .table-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.62);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:var(--red-900);border:1px solid var(--glass-line);border-radius:999px;padding:9px 15px;font:700 12px var(--f-sans);cursor:pointer;box-shadow:0 8px 24px rgba(108,6,11,.14),inset 0 1px 0 rgba(255,255,255,.85);transition:all .2s var(--ease)}
 .table-pill:hover{background:#fff;border-color:var(--red-700);transform:translateY(-1px)}
 .table-pill .dot-live{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(47,122,58,.2)}
-.spread-top-btn{display:inline-flex;align-items:center;gap:7px;background:var(--gold-grad);color:var(--red-900);border:1px solid rgba(255,250,224,.9);padding:9px 16px;border-radius:999px;font:800 12px var(--f-sans);letter-spacing:.03em;cursor:pointer;box-shadow:0 10px 24px rgba(108,6,11,.25),inset 0 1px 0 rgba(255,255,255,.85);transition:transform .25s var(--ease),box-shadow .25s}
-.spread-top-btn:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 14px 30px rgba(108,6,11,.38)}
 .funzone-btn{display:inline-flex;align-items:center;gap:7px;text-decoration:none;background:var(--red-grad);color:#fff;border:1px solid rgba(255,255,255,.4);padding:10px 19px;border-radius:999px;font:700 12.5px var(--f-sans);letter-spacing:.02em;box-shadow:0 10px 26px rgba(108,6,11,.38),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .25s var(--ease),box-shadow .25s}
 .funzone-btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 16px 34px rgba(108,6,11,.5),inset 0 1px 0 rgba(255,255,255,.35)}
 .hero-panel{position:relative;z-index:2;max-width:780px;margin:0 auto;padding:2.6rem 1.5rem 2.1rem;border-radius:40px;overflow:hidden;transform-origin:50% 100%;transform:perspective(1200px) rotateX(calc(var(--hp,0)*18deg + var(--my,0)*-3deg)) rotateY(calc(var(--mx,0)*4deg)) translate3d(0,calc(var(--hp,0)*-50px),calc(var(--hp,0)*-140px));opacity:calc(1 - var(--hp,0)*.85);transition:transform .2s linear;will-change:transform,opacity}
@@ -60,12 +66,9 @@ model-viewer::part(default-ar-button),model-viewer::part(default-exit-webxr-ar-b
 .step-ico svg{width:21px;height:21px;stroke:var(--gold-lt);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .step-n{font:700 9.5px var(--f-sans);letter-spacing:.25em;color:var(--red-700);margin-bottom:3px}
 .step-t{font:700 13px var(--f-sans);color:var(--red-900);letter-spacing:.02em}
-.hero-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:560px;margin:0 auto 18px}
+.hero-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:560px;margin:0 auto 22px}
 .hero-pills i{font:600 11.5px var(--f-sans);font-style:normal;padding:7px 14px;border-radius:99px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.85);color:var(--red-800);box-shadow:0 6px 16px rgba(108,6,11,.12)}
 .hero-pills b{color:var(--gold-dk);font-weight:800;margin-right:3px}
-.hero-spread-cta{display:inline-flex;align-items:center;gap:9px;margin:4px auto 20px;padding:12px 24px;border-radius:999px;background:var(--red-grad);color:var(--gold-lt);border:1.5px solid var(--gold);font:800 12.5px var(--f-sans);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 12px 30px rgba(108,6,11,.35),inset 0 1px 0 rgba(255,255,255,.35);transition:all .25s var(--ease)}
-.hero-spread-cta:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 18px 38px rgba(108,6,11,.5)}
-.hero-spread-cta svg{width:17px;height:17px;stroke:var(--gold-lt);fill:none;stroke-width:2.2}
 .ar-banner{display:flex;align-items:center;justify-content:center;gap:16px;max-width:520px;margin:0 auto;font:600 clamp(11px,2.6vw,14px) var(--f-brand);letter-spacing:.38em;text-transform:uppercase;color:var(--red-900)}
 .ar-banner::before,.ar-banner::after{content:'';flex:1;height:1.5px;background:linear-gradient(90deg,var(--red-800),var(--red-500))}
 .ar-banner span{white-space:nowrap;padding-left:.38em}
@@ -134,26 +137,6 @@ model-viewer::part(default-ar-button),model-viewer::part(default-exit-webxr-ar-b
 .tab-btn{flex-shrink:0;cursor:pointer;padding:9px 20px;border-radius:999px;background:rgba(255,255,255,.4);color:var(--red-900);border:1px solid rgba(255,255,255,.8);font:600 12.5px var(--f-sans);letter-spacing:.03em;transition:all .3s var(--ease);white-space:nowrap}
 .tab-btn:hover{background:rgba(255,255,255,.75);transform:translateY(-1px)}
 .tab-btn.active{color:var(--gold-lt);border-color:transparent;background:var(--red-grad);box-shadow:0 8px 20px rgba(108,6,11,.4),inset 0 1px 0 rgba(255,255,255,.3)}
-
-/* COMBO / WHOLE-TABLE AR BANNER SECTION */
-.combo-banner-wrap{max-width:1080px;margin:1.2rem auto 1.8rem;padding:0 1rem;position:relative;z-index:2}
-.combo-banner{border-radius:30px;padding:1.5rem 1.6rem;background:linear-gradient(135deg,rgba(108,6,11,.94) 0%,rgba(74,5,8,.96) 100%);color:#fff;border:1.5px solid var(--gold);box-shadow:0 22px 54px rgba(108,6,11,.32),inset 0 1px 0 rgba(255,255,255,.25);display:flex;flex-direction:column;gap:16px}
-@media(min-width:760px){.combo-banner{flex-direction:row;align-items:center;justify-content:space-between;padding:1.8rem 2.2rem}}
-.cb-left{max-width:600px}
-.cb-pill{display:inline-flex;align-items:center;gap:6px;background:var(--gold-grad);color:var(--red-900);font:800 10.5px var(--f-brand);letter-spacing:.16em;text-transform:uppercase;padding:4px 12px;border-radius:999px;margin-bottom:10px}
-.cb-title{font-family:var(--f-display);font-size:clamp(22px,4.5vw,31px);font-weight:700;color:var(--gold-lt);line-height:1.2}
-.cb-desc{font-size:13.5px;line-height:1.6;color:rgba(255,255,255,.86);margin-top:6px}
-.cb-slots-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.cb-mini-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(246,224,163,.35);font:600 12px var(--f-sans);color:#fff}
-.cb-mini-chip b{color:var(--gold-lt);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
-.cb-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;flex-shrink:0}
-.cb-launch-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--gold-grad);color:var(--red-900);border:1px solid #fff;border-radius:999px;padding:13px 22px;font:800 12.5px var(--f-sans);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.35);transition:transform .2s var(--ease),box-shadow .2s}
-.cb-launch-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.5)}
-.cb-launch-btn:disabled{opacity:.8;cursor:progress}
-.cb-launch-btn svg{width:17px;height:17px;stroke:var(--red-900);fill:none;stroke-width:2.2}
-.cb-custom-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(246,224,163,.55);border-radius:999px;padding:12px 18px;font:700 12px var(--f-sans);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:background .2s,transform .2s}
-.cb-custom-btn:hover{background:rgba(255,255,255,.24);transform:translateY(-1px)}
-
 /* MAIN*/
 .main{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:1.4rem 1rem 4rem}
 .full-menu-title{font-family:var(--f-display);font-size:clamp(30px,7vw,46px);font-weight:700;text-align:center;color:var(--red-900);margin:.5rem 0 1rem;text-shadow:0 1px 0 rgba(255,255,255,.7)}
@@ -264,49 +247,15 @@ model-viewer{display:block;width:100%;height:100%;background:transparent;--progr
 .modal-footer-right{display:flex;align-items:center;gap:12px;margin-left:auto}
 .modal-note{font:600 10px var(--f-sans);color:var(--ink-soft);letter-spacing:.1em;text-transform:uppercase;text-align:right;line-height:1.4;max-width:120px}
 
-/* COMBO / TABLE SPREAD BUILDER MODAL */
-.spread-modal-card{max-width:600px}
-.spread-viewer-wrap{position:relative;width:100%;height:300px;overflow:hidden;background:radial-gradient(circle at 50% 35%,#b8141c,#4a0508 82%);border-radius:0 0 28px 28px}
-.spread-viewer-status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--gold-lt);font:600 13px var(--f-sans);background:rgba(42,4,6,.55);z-index:5;transition:opacity .3s;pointer-events:none}
-.spread-viewer-status.hidden{opacity:0}
-.spread-presets{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
-.spread-presets::-webkit-scrollbar{display:none}
-.spread-preset-btn{flex-shrink:0;padding:8px 14px;border-radius:999px;border:1px solid rgba(163,13,20,.28);background:rgba(255,255,255,.78);color:var(--red-800);font:700 11.5px var(--f-sans);cursor:pointer;transition:all .2s}
-.spread-preset-btn:hover,.spread-preset-btn.active{background:var(--red-grad);color:var(--gold-lt);border-color:transparent;box-shadow:0 6px 16px rgba(108,6,11,.28)}
-.spread-slots-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
-@media(min-width:520px){.spread-slots-grid{grid-template-columns:repeat(3,1fr)}}
-.spread-slot-box{padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.75);border:1px solid rgba(169,125,44,.4);display:flex;flex-direction:column;gap:6px}
-.spread-slot-lbl{font:800 10px var(--f-brand);letter-spacing:.14em;text-transform:uppercase;color:var(--red-700);display:flex;align-items:center;justify-content:space-between}
-.spread-slot-select{width:100%;height:36px;border-radius:10px;border:1px solid rgba(163,13,20,.28);background:#fff;padding:0 8px;font:600 12px var(--f-sans);color:var(--ink);outline:none}
-.spread-slot-select:focus{border-color:var(--red-600)}
-.spread-extra-wrap{margin-top:10px}
-.spread-extra-title{font:700 11px var(--f-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mid);margin-bottom:6px}
-.spread-chips-pool{display:flex;flex-wrap:wrap;gap:6px}
-.spread-dish-toggle{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;border:1px solid rgba(163,13,20,.25);background:rgba(255,255,255,.75);color:var(--ink);font:600 11.5px var(--f-sans);cursor:pointer;transition:all .18s}
-.spread-dish-toggle.selected{background:var(--red-grad);color:var(--gold-lt);border-color:var(--gold)}
-.spread-summary-bar{margin-top:14px;padding:12px 14px;border-radius:18px;background:rgba(217,178,95,.2);border:1px solid rgba(169,125,44,.5);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.spread-sum-info{display:flex;flex-direction:column}
-.spread-sum-count{font:700 11px var(--f-sans);text-transform:uppercase;letter-spacing:.1em;color:var(--red-800)}
-.spread-sum-price{font:700 26px var(--f-display);color:var(--red-800);line-height:1.1}
-.spread-cta-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-.spread-ar-go{flex:1.4;min-height:48px;border:none;border-radius:999px;background:var(--gold-grad);color:var(--red-900);font:800 12.5px var(--f-sans);letter-spacing:.09em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 10px 26px rgba(108,6,11,.32);padding:10px 18px;transition:transform .2s}
-.spread-ar-go:hover:not(:disabled){transform:translateY(-2px)}
-.spread-ar-go:disabled{opacity:.75;cursor:progress}
-.spread-ar-go svg{width:17px;height:17px;stroke:var(--red-900);fill:none;stroke-width:2.2}
-.spread-order-all{flex:1;min-height:48px;border:1px solid rgba(255,255,255,.5);border-radius:999px;background:var(--red-grad);color:#fff;font:800 12px var(--f-sans);letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:10px 16px;box-shadow:0 8px 22px rgba(108,6,11,.28)}
-
 /* FLOATING CART BAR */
-.floating-cart{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);transform:translate(-50%,130%);z-index:8500;width:calc(100% - 24px);max-width:560px;padding:10px 12px 10px 18px;border-radius:999px;background:linear-gradient(135deg,#6c060b 0%,#4a0508 100%);border:1.5px solid var(--gold);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 20px 50px rgba(42,12,14,.55),inset 0 1px 0 rgba(255,255,255,.3);opacity:0;visibility:hidden;pointer-events:none;transition:transform .38s var(--ease),opacity .3s ease,visibility .3s;cursor:pointer}
+.floating-cart{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);transform:translate(-50%,130%);z-index:8500;width:calc(100% - 24px);max-width:540px;padding:10px 12px 10px 18px;border-radius:999px;background:linear-gradient(135deg,#6c060b 0%,#4a0508 100%);border:1.5px solid var(--gold);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 20px 50px rgba(42,12,14,.55),inset 0 1px 0 rgba(255,255,255,.3);opacity:0;visibility:hidden;pointer-events:none;transition:transform .38s var(--ease),opacity .3s ease,visibility .3s;cursor:pointer}
 .floating-cart.visible{transform:translate(-50%,0);opacity:1;visibility:visible;pointer-events:auto}
 .fc-left{display:flex;align-items:center;gap:12px;min-width:0}
 .fc-badge{min-width:34px;height:34px;border-radius:50%;background:var(--gold-grad);color:var(--red-900);font:800 13px var(--f-brand);display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.3)}
 .fc-meta{display:flex;flex-direction:column;min-width:0}
 .fc-total{font:700 18px/1.1 var(--f-display);color:var(--gold-lt)}
 .fc-sub{font:500 11px/1.2 var(--f-sans);color:rgba(255,255,255,.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fc-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.fc-ar-spread-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);color:var(--gold-lt);border:1px solid var(--gold);border-radius:999px;padding:10px 13px;font:800 11px var(--f-sans);letter-spacing:.05em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:background .2s}
-.fc-ar-spread-btn:hover{background:rgba(255,255,255,.26)}
-.fc-cta{display:inline-flex;align-items:center;gap:8px;background:var(--gold-grad);color:var(--red-900);border:none;border-radius:999px;padding:11px 18px;font:800 12px var(--f-sans);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35);white-space:nowrap}
+.fc-cta{display:inline-flex;align-items:center;gap:8px;background:var(--gold-grad);color:var(--red-900);border:none;border-radius:999px;padding:11px 20px;font:800 12px var(--f-sans);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35);white-space:nowrap}
 
 /* CART & ORDER SUMMARY */
 .cart-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:20px 1.5rem 14px;border-bottom:1px solid rgba(169,125,44,.28)}
@@ -330,8 +279,6 @@ model-viewer{display:block;width:100%;height:100%;background:transparent;--progr
 .cart-summary-box{padding:12px 14px;border-radius:18px;background:rgba(217,178,95,.18);border:1px solid rgba(169,125,44,.45);display:flex;align-items:center;justify-content:space-between}
 .cs-label{font:700 13px var(--f-sans);text-transform:uppercase;letter-spacing:.1em;color:var(--red-900)}
 .cs-amount{font:700 28px var(--f-display);color:var(--red-800)}
-.cart-spread-ar-btn{width:100%;min-height:46px;border:1.5px solid var(--red-800);border-radius:999px;background:var(--gold-grad);color:var(--red-900);font:800 12.5px var(--f-sans);letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 8px 22px rgba(108,6,11,.22);transition:transform .2s}
-.cart-spread-ar-btn:hover{transform:translateY(-2px)}
 .wa-send-btn{width:100%;min-height:50px;border:none;border-radius:999px;background:var(--wa-grad);color:#fff;font:800 13.5px var(--f-sans);letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;box-shadow:0 12px 28px rgba(18,140,126,.4);transition:transform .2s var(--ease),box-shadow .2s}
 .wa-send-btn:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(18,140,126,.55)}
 .wa-send-btn svg{width:20px;height:20px;fill:currentColor}
@@ -340,21 +287,68 @@ model-viewer{display:block;width:100%;height:100%;background:transparent;--progr
 .cart-aux-btn:hover{background:#fff;border-color:var(--red-700)}
 
 /* TOAST */
-.toast{position:fixed;top:18px;left:50%;transform:translate(-50%,-200%);opacity:0;visibility:hidden;z-index:12000;background:rgba(20,4,5,.92);color:var(--gold-lt);border:1px solid var(--gold);padding:10px 18px;border-radius:999px;font:600 12.5px var(--f-sans);box-shadow:0 12px 30px rgba(0,0,0,.4);transition:transform .3s var(--ease),opacity .3s ease,visibility .3s;pointer-events:none}
+.toast{position:fixed;top:18px;left:50%;transform:translate(-50%,-200%);opacity:0;visibility:hidden;z-index:12000;background:rgba(20,4,5,.92);color:var(--gold-lt);border:1px solid var(--gold);padding:10px 18px;border-radius:999px;font:600 12.5px var(--f-sans);box-shadow:0 12px 30px rgba(0,0,0,.4);transition:transform .3s var(--ease),opacity .3s ease,visibility .3s;pointer-events:none;max-width:92vw;text-align:center}
 .toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
+
+/* ───── WHOLE-TABLE AR (TABLE SPREAD) ───── */
+.spread-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--gold-grad);color:var(--red-900);border:1px solid rgba(255,250,224,.85);padding:10px 18px;border-radius:999px;font:700 12.5px var(--f-sans);letter-spacing:.03em;cursor:pointer;box-shadow:0 10px 26px rgba(108,6,11,.28),inset 0 1.5px 0 rgba(255,255,255,.78);transition:transform .25s var(--ease),box-shadow .25s;-webkit-tap-highlight-color:transparent}
+.spread-btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 16px 34px rgba(108,6,11,.4),inset 0 1.5px 0 rgba(255,255,255,.9)}
+.spread-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.spread-cta-row{display:flex;justify-content:center;margin:0 0 1.4rem}
+.spread-cta-big{padding:13px 26px;font-size:13.5px}
+.spread-head{padding:22px 1.5rem 12px;border-bottom:1px solid rgba(169,125,44,.28);padding-right:64px}
+.spread-title{font-family:var(--f-display);font-size:24px;font-weight:700;color:var(--red-800);line-height:1.2}
+.spread-sub{margin-top:6px;font:400 12.5px/1.55 var(--f-sans);color:var(--ink-mid)}
+.spread-body{padding:14px 1.4rem 1.6rem;display:flex;flex-direction:column;gap:12px}
+.spread-presets{display:flex;gap:8px;flex-wrap:wrap}
+.spread-chip{cursor:pointer;border:1px solid rgba(163,13,20,.28);background:rgba(255,255,255,.75);color:var(--red-800);font:700 11.5px var(--f-sans);padding:8px 14px;border-radius:999px;transition:all .2s;-webkit-tap-highlight-color:transparent}
+.spread-chip:hover{background:#fff;border-color:var(--red-700)}
+.spread-chip.primary{background:var(--red-grad);color:var(--gold-lt);border-color:transparent;box-shadow:0 6px 16px rgba(108,6,11,.3)}
+.spread-list{display:flex;flex-direction:column;gap:9px;max-height:38svh;overflow-y:auto;padding:2px}
+.spread-row{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:18px;background:rgba(255,255,255,.66);border:1.5px solid rgba(255,255,255,.95);cursor:pointer;transition:all .2s var(--ease);-webkit-tap-highlight-color:transparent;outline:none}
+.spread-row:hover{background:rgba(255,255,255,.9)}
+.spread-row:focus-visible{box-shadow:0 0 0 3px rgba(192,18,26,.25)}
+.spread-row.selected{border-color:var(--red-600);background:#fff;box-shadow:0 0 0 3px rgba(192,18,26,.12),0 8px 20px rgba(108,6,11,.12)}
+.spread-check{width:24px;height:24px;flex-shrink:0;border-radius:50%;border:2px solid rgba(163,13,20,.4);display:grid;place-items:center;font:800 13px var(--f-sans);color:transparent;transition:all .2s}
+.spread-row.selected .spread-check{background:var(--red-grad);border-color:transparent;color:#fff}
+.spread-thumb{width:46px;height:46px;flex-shrink:0;border-radius:14px;overflow:hidden;background:radial-gradient(circle at 30% 20%,#fff,#fbf3e4);border:1px solid rgba(255,255,255,.9);display:grid;place-items:center;font-size:22px}
+.spread-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.spread-meta{display:flex;flex-direction:column;min-width:0;flex:1}
+.spread-name{font:700 15px/1.25 var(--f-display);color:var(--red-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spread-cat{font:600 11px var(--f-sans);color:var(--ink-soft);margin-top:2px}
+.spread-price{font:700 15px var(--f-display);color:var(--red-700);flex-shrink:0}
+.spread-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-radius:18px;background:rgba(217,178,95,.18);border:1px solid rgba(169,125,44,.45)}
+.spread-count{font:700 12px var(--f-sans);text-transform:uppercase;letter-spacing:.08em;color:var(--red-900)}
+.spread-total{font:700 22px var(--f-display);color:var(--red-800)}
+.spread-go-btn{width:100%;min-height:52px;border:none;border-radius:999px;background:var(--gold-grad);color:var(--red-900);font:800 13px var(--f-sans);letter-spacing:.09em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;box-shadow:0 12px 28px rgba(108,6,11,.3),inset 0 1.5px 0 rgba(255,255,255,.8);transition:transform .2s var(--ease),box-shadow .2s,opacity .2s}
+.spread-go-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.spread-go-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 16px 34px rgba(108,6,11,.42),inset 0 1.5px 0 rgba(255,255,255,.9)}
+.spread-go-btn:disabled{opacity:.6;cursor:not-allowed}
+.spread-go-btn.ready{background:var(--red-grad);color:var(--gold-lt);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 12px 28px rgba(108,6,11,.3)}50%{box-shadow:0 12px 36px rgba(217,38,46,.65)}}
+.spread-note{font:500 11px/1.5 var(--f-sans);color:var(--ink-soft);text-align:center}
+.spread-empty{text-align:center;padding:1.4rem 0;color:var(--ink-soft);font-style:italic;font-size:13px}
+.ar-spread-chip{display:none;align-self:center;max-width:100%;align-items:center;gap:8px;background:rgba(20,4,5,.88);color:var(--gold-lt);border:1px solid rgba(217,178,95,.55);padding:8px 16px;border-radius:999px;font:700 11.5px var(--f-sans);letter-spacing:.03em;text-align:center;box-shadow:0 8px 22px rgba(0,0,0,.45)}
+#global-ar-viewer.spread-mode .ar-spread-chip{display:flex}
+#global-ar-viewer.spread-mode .ar-side-btn,#global-ar-viewer.spread-mode .ar-carousel-wrap{display:none}
+
+/* CART → PLACE ON TABLE */
+.cart-place-box{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:20px;background:rgba(217,178,95,.16);border:1px solid rgba(169,125,44,.45)}
+.cart-place-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.cart-place-strip::-webkit-scrollbar{display:none}
+.cp-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;padding:4px 12px 4px 4px;border-radius:999px;background:#fff;border:1px solid rgba(163,13,20,.22);font:700 12px var(--f-sans);color:var(--red-800);white-space:nowrap}
+.cp-thumb{width:30px;height:30px;border-radius:50%;overflow:hidden;background:radial-gradient(circle,#fff,#f3e4c6);display:grid;place-items:center;font-size:15px;flex-shrink:0}
+.cp-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 
 /* AR SCREEN OVERLAY HUD */
 #global-ar-viewer{position:fixed;inset:0;width:100vw;height:100vh;z-index:-1;opacity:0;pointer-events:none}
 #global-ar-viewer.ar-active{z-index:9999;opacity:1;pointer-events:auto}
 .ar-hud{display:none;position:fixed;inset:0;pointer-events:none;z-index:10000;flex-direction:column;justify-content:space-between;padding:max(env(safe-area-inset-top),16px) 16px max(env(safe-area-inset-bottom),22px)}
 model-viewer[ar-status="session-started"] .ar-hud,model-viewer[ar-status="object-placed"] .ar-hud{display:flex}
-.ar-hud-top{display:flex;justify-content:space-between;align-items:center;gap:8px;pointer-events:auto;flex-wrap:wrap}
-.ar-top-left-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ar-hud-top{display:flex;justify-content:space-between;align-items:center;gap:10px;pointer-events:auto}
 .ar-exit-btn{width:40px;height:40px;flex-shrink:0;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(20,4,5,.88);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .ar-exit-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
-.ar-add-quick{display:inline-flex;align-items:center;gap:7px;background:var(--gold-grad);color:var(--red-900);border:none;border-radius:999px;padding:9px 15px;font:800 11.5px var(--f-sans);letter-spacing:.05em;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.45)}
-.ar-spread-quick{display:inline-flex;align-items:center;gap:6px;background:rgba(20,4,5,.88);color:var(--gold-lt);border:1.5px solid var(--gold);border-radius:999px;padding:8px 14px;font:800 11px var(--f-sans);letter-spacing:.05em;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.45)}
-.ar-spread-quick.active{background:var(--red-grad);color:#fff;border-color:#fff}
+.ar-add-quick{display:inline-flex;align-items:center;gap:7px;background:var(--gold-grad);color:var(--red-900);border:none;border-radius:999px;padding:9px 16px;font:800 12px var(--f-sans);letter-spacing:.05em;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.45)}
 .ar-side-btn{position:absolute;top:50%;transform:translateY(-50%);width:54px;height:54px;border-radius:50%;display:grid;place-items:center;cursor:pointer;pointer-events:auto;z-index:5;background:rgba(20,4,5,.88);border:1.5px solid var(--gold-lt);box-shadow:0 8px 24px rgba(0,0,0,.5);transition:transform .15s ease,background .15s ease;-webkit-tap-highlight-color:transparent}
 .ar-side-btn:active{transform:translateY(-50%) scale(.9);background:rgba(217,178,95,.4)}
 .ar-side-btn svg{width:22px;height:22px;stroke:var(--gold-lt);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
@@ -367,7 +361,7 @@ model-viewer[ar-status="object-placed"] .ar-placement-hint{opacity:0}
 .ar-carousel-label{align-self:center;font:700 10px var(--f-sans);letter-spacing:.16em;text-transform:uppercase;color:var(--gold-lt);text-shadow:0 2px 8px rgba(0,0,0,.8)}
 .ar-carousel{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:4px 6px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scroll-behavior:auto}
 .ar-carousel::-webkit-scrollbar{display:none}
-.ar-carousel-item{flex:0 0 auto;scroll-snap-align:center;display:flex;align-items:center;gap:9px;padding:6px 12px 6px 6px;border-radius:999px;background:rgba(20,4,5,.86);border:1.5px solid rgba(255,255,255,.22);color:#fff;cursor:pointer;transition:all .25s var(--ease);box-shadow:0 8px 20px rgba(0,0,0,.4);text-align:left;max-width:220px}
+.ar-carousel-item{flex:0 0 auto;scroll-snap-align:center;display:flex;align-items:center;gap:9px;padding:6px 12px 6px 6px;border-radius:999px;background:rgba(20,4,5,.86);border:1.5px solid rgba(255,255,255,.22);color:#fff;cursor:pointer;transition:all .25s var(--ease);box-shadow:0 8px 20px rgba(0,0,0,.4);text-align:left;max-width:210px}
 .ar-carousel-item.active{background:linear-gradient(135deg,rgba(163,13,20,.92),rgba(74,5,8,.95));border-color:var(--gold-lt);box-shadow:0 10px 26px rgba(0,0,0,.65),0 0 0 2px rgba(217,178,95,.35);transform:translateY(-2px) scale(1.03)}
 .ar-c-thumb{width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0;background:radial-gradient(circle,#fff,#f3e4c6);display:grid;place-items:center;font-size:18px;border:1px solid rgba(217,178,95,.6)}
 .ar-c-thumb img{width:100%;height:100%;object-fit:cover;display:block}
@@ -437,12 +431,13 @@ model-viewer[ar-status="object-placed"] .ar-placement-hint{opacity:0}
       <option value="ta">தமிழ்</option><option value="ml">മലയാളം</option><option value="te">తెలుగు</option>
     </select>
     <div class="hero-top-right">
-      <button type="button" class="spread-top-btn" id="hero-top-spread-btn">
-        🍱 <span id="ui-top-spread">Table Spread AR</span>
-      </button>
       <button type="button" class="table-pill" id="table-pill" title="Click to set or change table number">
         <span class="dot-live"></span>
         <span id="table-pill-text">Table —</span>
+      </button>
+      <button type="button" class="spread-btn" id="spread-open-hero" style="display:none">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M3 3v6M21 3v6"/></svg>
+        <span id="ui-spread-hero">Table Spread</span>
       </button>
       <a href="FunZone.html" class="funzone-btn">🎮 FunZone</a>
     </div>
@@ -474,14 +469,9 @@ model-viewer[ar-status="object-placed"] .ar-placement-hint{opacity:0}
 
     <div class="hero-pills">
       <i><b>AR</b><span id="ui-hp1">Table preview at real size</span></i>
-      <i><b>COMBO</b><span id="ui-hp-spread">Whole-table multi-dish AR</span></i>
+      <i><b>AI</b><span id="ui-hp2">Dish recommendations</span></i>
       <i><b>3D</b><span id="ui-hp3">Zoom into every dish</span></i>
     </div>
-
-    <button type="button" class="hero-spread-cta" id="hero-spread-cta">
-      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-      <span id="ui-hero-spread-btn">Place Full 3-Course Spread in AR</span>
-    </button>
 
     <div class="ar-banner"><span id="ui-ar-badge">Interactive 3D &amp; AR Preview</span></div>
 
@@ -540,29 +530,14 @@ model-viewer[ar-status="object-placed"] .ar-placement-hint{opacity:0}
   </div>
 </section>
 
-<!-- Combo / Whole-Table AR Spread Callout -->
-<section class="combo-banner-wrap" id="combo-banner-wrap" aria-label="Whole-Table AR Combo Spread">
-  <div class="combo-banner">
-    <div class="cb-left">
-      <span class="cb-pill">✦ Whole-Table AR Spread</span>
-      <h2 class="cb-title" id="ui-cb-title">See a Full 3-Course Spread on Your Table at Once</h2>
-      <p class="cb-desc" id="ui-cb-desc">Place multiple dishes together — Starter, Main Course &amp; Dessert — side by side at real portion scale to see how your whole table looks.</p>
-      <div class="cb-slots-preview" id="cb-slots-preview"></div>
-    </div>
-    <div class="cb-actions">
-      <button type="button" class="cb-launch-btn" id="cb-quick-launch-btn">
-        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-        <span id="ui-cb-launch">Place Full Spread in AR</span>
-      </button>
-      <button type="button" class="cb-custom-btn" id="cb-open-builder-btn">
-        ⚙️ <span id="ui-cb-customize">Customize Spread</span>
-      </button>
-    </div>
-  </div>
-</section>
-
 <main class="main">
   <h2 class="full-menu-title" id="ui-full-menu">Full Menu</h2>
+  <div class="spread-cta-row" id="spread-cta-row" style="display:none">
+    <button type="button" class="spread-btn spread-cta-big" id="spread-open-main">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M3 3v6M21 3v6"/></svg>
+      <span id="ui-spread-main">Build a Whole-Table AR Spread</span>
+    </button>
+  </div>
   <div id="loading-state" class="state-box">
     <div class="skeleton-grid"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
     <p class="loading-label" id="ui-loading">Loading...</p>
@@ -579,17 +554,12 @@ model-viewer[ar-status="object-placed"] .ar-placement-hint{opacity:0}
       <span class="fc-sub" id="fc-sub">Tap to review &amp; add notes</span>
     </div>
   </div>
-  <div class="fc-right">
-    <button type="button" class="fc-ar-spread-btn" id="fc-spread-ar-btn" title="Place all cart dishes together in AR">
-      🍱 AR Spread
-    </button>
-    <button type="button" class="fc-cta" id="fc-open-btn">
-      <span id="ui-view-cart">View Order</span> →
-    </button>
-  </div>
+  <button type="button" class="fc-cta" id="fc-open-btn">
+    <span id="ui-view-cart">View Order</span> →
+  </button>
 </div>
 
-<!-- Full-Screen AR Viewer with In-AR Dish Carousel + Whole-Table Spread Switcher -->
+<!-- Full-Screen AR Viewer with In-AR Dish Carousel (single dish) or Whole-Table Spread -->
 <model-viewer
   id="global-ar-viewer"
   ar
@@ -609,10 +579,7 @@ model-viewer[ar-status="object-placed"] .ar-placement-hint{opacity:0}
 
   <div class="ar-hud">
     <div class="ar-hud-top">
-      <div class="ar-top-left-group">
-        <button type="button" class="ar-add-quick" id="ar-add-btn">+ Add to Order</button>
-        <button type="button" class="ar-spread-quick" id="ar-spread-mode-btn">🍱 3-Course Spread</button>
-      </div>
+      <button type="button" class="ar-add-quick" id="ar-add-btn">+ Add to Order</button>
       <button type="button" class="ar-exit-btn" id="ar-close-btn" aria-label="Exit AR">
         <svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></svg>
       </button>
@@ -626,6 +593,7 @@ model-viewer[ar-status="object-placed"] .ar-placement-hint{opacity:0}
     </button>
 
     <div class="ar-hud-bottom">
+      <div class="ar-spread-chip" id="ar-spread-chip"></div>
       <div class="ar-carousel-wrap">
         <div class="ar-carousel" id="ar-carousel" role="listbox" aria-label="Switch AR Dish"></div>
       </div>
@@ -684,82 +652,31 @@ model-viewer[ar-status="object-placed"] .ar-placement-hint{opacity:0}
   </div>
 </div>
 
-<!-- Combo / Whole-Table Spread AR Builder Modal -->
-<div class="modal-overlay" id="spread-modal" role="dialog" aria-modal="true" aria-label="Build Whole-Table AR Spread">
-  <div class="modal-card spread-modal-card">
+<!-- Whole-Table AR: pick several dishes and place them together -->
+<div class="modal-overlay" id="spread-modal" role="dialog" aria-modal="true" aria-label="Whole-table AR">
+  <div class="modal-card">
     <span class="grab"></span>
     <button class="modal-close" id="spread-close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></svg></button>
-    <div class="spread-viewer-wrap" id="spread-viewer-wrap">
-      <div class="mv-ar-badge visible">🍱 Whole-Table 3D Spread</div>
-      <div class="spread-viewer-status" id="spread-viewer-status">
-        <span class="btn-spin" style="width:22px;height:22px;border-color:rgba(255,255,255,.3);border-top-color:var(--gold-lt)"></span>
-        <span id="spread-status-text">Composing 3D Table Spread…</span>
-      </div>
-      <model-viewer
-        id="spread-preview-mv"
-        camera-controls
-        touch-action="pan-y"
-        shadow-intensity="1"
-        shadow-softness="0.9"
-        environment-image="neutral"
-        exposure="1.05"
-        camera-orbit="0deg 65deg 115%"
-        min-camera-orbit="auto auto 35%"
-        max-camera-orbit="auto auto 240%"
-        interaction-prompt="none"
-      ></model-viewer>
+    <div class="spread-head">
+      <h2 class="spread-title" id="ui-spread-title">Whole-Table AR</h2>
+      <p class="spread-sub" id="ui-spread-sub">Pick several dishes and see the full spread on your table at once — starter, main and dessert together.</p>
     </div>
-
-    <div class="modal-body">
-      <h2 class="modal-name" style="font-size:25px;">Whole-Table AR Spread Builder</h2>
-      <p style="font-size:12.5px;color:var(--ink-mid);margin-top:4px;">Select a Starter, Main &amp; Dessert (or any combination of dishes) to place together on your table at true portion scale.</p>
-
-      <div class="spread-presets" style="margin-top:12px;">
-        <button type="button" class="spread-preset-btn active" id="preset-3course">🍽️ Chef's 3-Course</button>
-        <button type="button" class="spread-preset-btn" id="preset-veg">🌿 Veg Feast</button>
-        <button type="button" class="spread-preset-btn" id="preset-all">✨ All AR Dishes</button>
-        <button type="button" class="spread-preset-btn" id="preset-cart">🛒 From My Order</button>
+    <div class="spread-body">
+      <div class="spread-presets">
+        <button type="button" class="spread-chip primary" id="spread-preset-full">Starter + Main + Dessert</button>
+        <button type="button" class="spread-chip" id="spread-preset-cart">My Order</button>
+        <button type="button" class="spread-chip" id="spread-preset-clear">Clear</button>
       </div>
-
-      <div class="spread-slots-grid">
-        <div class="spread-slot-box">
-          <span class="spread-slot-lbl"><span>01 · Starter</span><span>🥗</span></span>
-          <select id="spread-slot-starter" class="spread-slot-select" aria-label="Select Starter"></select>
-        </div>
-        <div class="spread-slot-box">
-          <span class="spread-slot-lbl"><span>02 · Main Course</span><span>🍝</span></span>
-          <select id="spread-slot-main" class="spread-slot-select" aria-label="Select Main Course"></select>
-        </div>
-        <div class="spread-slot-box">
-          <span class="spread-slot-lbl"><span>03 · Dessert</span><span>🍰</span></span>
-          <select id="spread-slot-dessert" class="spread-slot-select" aria-label="Select Dessert"></select>
-        </div>
+      <div class="spread-list" id="spread-list" role="group" aria-label="Dishes"></div>
+      <div class="spread-summary">
+        <span class="spread-count" id="spread-count">0 / 6 selected</span>
+        <span class="spread-total" id="spread-total">₹0</span>
       </div>
-
-      <div class="spread-extra-wrap">
-        <div class="spread-extra-title">Or toggle any dishes to include in your table spread (up to 6):</div>
-        <div class="spread-chips-pool" id="spread-chips-pool"></div>
+      <button type="button" class="spread-go-btn" id="spread-go-btn"></button>
+      <div class="cart-sec-actions">
+        <button type="button" class="cart-aux-btn" id="spread-add-btn">+ Add all to order</button>
       </div>
-
-      <div class="spread-summary-bar">
-        <div class="spread-sum-info">
-          <span class="spread-sum-count" id="spread-sum-count">3 Dishes on Table</span>
-          <span class="spread-sum-price" id="spread-sum-price">₹0</span>
-        </div>
-        <div style="font-size:11px;color:var(--ink-soft);text-align:right;max-width:170px;" id="spread-ready-hint">
-          Preparing 3D spread…
-        </div>
-      </div>
-
-      <div class="spread-cta-row">
-        <button type="button" class="spread-ar-go" id="spread-launch-ar-btn">
-          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          <span id="spread-launch-ar-text">Place Spread on Table (AR)</span>
-        </button>
-        <button type="button" class="spread-order-all" id="spread-add-cart-btn">
-          + Add All to Order
-        </button>
-      </div>
+      <p class="spread-note" id="ui-spread-note">Dishes are placed side by side at real size. Whole-table AR works best in Chrome on Android (WebXR) and on iPhone (AR Quick Look).</p>
     </div>
   </div>
 </div>
@@ -780,16 +697,17 @@ model-viewer[ar-status="object-placed"] .ar-placement-hint{opacity:0}
 
       <div class="cart-items-list" id="cart-items-list"></div>
 
+      <div class="cart-place-box" id="cart-place-box" style="display:none">
+        <div class="cart-place-strip" id="cart-place-strip" aria-label="Dishes that will appear on your table"></div>
+        <button type="button" class="spread-go-btn" id="cart-place-btn"></button>
+      </div>
+
       <textarea id="cart-general-note" class="cart-order-note" placeholder="Any overall table note? (e.g., serve starters together, allergies, extra plates…)"></textarea>
 
       <div class="cart-summary-box">
         <span class="cs-label" id="ui-total-lbl">Total Amount</span>
         <span class="cs-amount" id="cart-grand-total">₹0</span>
       </div>
-
-      <button type="button" class="cart-spread-ar-btn" id="cart-view-spread-ar-btn">
-        🍱 Preview Entire Order on Table in AR
-      </button>
 
       <button type="button" class="wa-send-btn" id="wa-order-btn">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.82 14.01c-.24.68-1.41 1.3-1.95 1.38-.5.08-1.13.11-1.83-.11-.42-.13-.97-.31-1.66-.61-2.92-1.26-4.82-4.21-4.97-4.4-.15-.19-1.19-1.58-1.19-3.02 0-1.44.75-2.15 1.02-2.44.27-.29.59-.37.79-.37.2 0 .4.01.57.01.18 0 .43-.07.67.51.24.59.82 2.02.9 2.17.07.15.12.32.02.51-.1.19-.15.32-.29.49-.15.17-.31.38-.44.51-.15.15-.3.31-.13.6.17.29.76 1.25 1.63 2.02 1.12.99 2.06 1.3 2.35 1.45.29.15.46.12.63-.07.17-.19.73-.85.92-1.15.19-.29.39-.24.66-.15.27.1 1.71.81 2 .95.29.15.49.22.56.34.07.12.07.71-.17 1.39z"/></svg>
@@ -811,7 +729,7 @@ model-viewer[ar-status="object-placed"] .ar-placement-hint{opacity:0}
   <div class="ar-banner"><span>AR Menu Experience</span></div>
   <p>
     <span id="ui-footer">Tap any dish to view in 3D · Prices in ₹ · 🌿 Vegetarian friendly</span><br>
-    <span id="ui-footer-3">AI + AR: every dish is a 3D model you can zoom, place on your table or combine into a full table spread.</span><br>
+    <span id="ui-footer-3">AI + AR: every dish is a 3D model you can zoom, place on your table and match to your taste.</span><br>
     <small id="ui-footer-2">AR requires a compatible mobile device · Model size reflects actual portion</small>
   </p>
 </footer>
@@ -860,10 +778,15 @@ const I18N = {
         add: 'Add', viewCart: 'View Order', orderSummary: 'Your Order', sendWA: 'Send Order via WhatsApp',
         notePh: 'Special instructions (e.g., less spicy, no onion)…',
         tableLbl: 'Table', tapReview: 'Tap to review & add notes',
-        topSpread: 'Table Spread AR', heroSpreadBtn: 'Place Full 3-Course Spread in AR',
-        cbTitle: 'See a Full 3-Course Spread on Your Table at Once',
-        cbDesc: 'Place multiple dishes together — Starter, Main Course & Dessert — side by side at real portion scale to see how your whole table looks.',
-        cbLaunch: 'Place Full Spread in AR', cbCustomize: 'Customize Spread' },
+        spreadHero: 'Table Spread', spreadMain: 'Build a Whole-Table AR Spread',
+        spreadTitle: 'Whole-Table AR', spreadSub: 'Pick several dishes and see the full spread on your table at once — starter, main and dessert together.',
+        spreadFull: 'Starter + Main + Dessert', spreadMine: 'My Order', spreadClear: 'Clear',
+        spreadSelected: 'selected', spreadGo: 'View Full Spread on Table', spreadBuilding: 'Building your table…', spreadReady: 'Ready — Tap to Place on Table',
+        spreadAddAll: '+ Add all to order', spreadAdded: 'All spread dishes added to your order',
+        spreadMax: 'You can place up to 6 dishes at once', spreadNone: 'Pick at least one dish first', spreadNoCart: 'Your order is empty — add dishes first',
+        spreadNoDishes: 'No AR dishes available', spreadNote: 'Dishes are placed side by side at real size. Whole-table AR works best in Chrome on Android (WebXR) and on iPhone (AR Quick Look).',
+        spreadFail: 'Could not build the table spread. Please try again.', spreadUnsupported: 'Whole-table AR is not supported on this device/browser',
+        spreadChip: 'Full spread', spreadDishes: 'dishes', spreadInOrder: '✓ Spread in order', spreadSeeMine: '🍽️ See my order on the table', spreadReadyToast: 'Spread ready — tap to place it on your table' },
   it: { sub: 'Autentica Cucina Italiana', badge: 'Anteprima Interattiva 3D & AR', veg: 'vegetariano', loading: 'Caricamento...',
         search: 'Cerca piatti…', vegOnly: 'Solo veg', empty: 'Nessun piatto trovato', viewAR: 'Vedi sul tavolo', viewTable: 'Vedi sul tavolo',
         launching: 'Caricamento…', launch: 'Avvia AR', retry: 'Riprova', pick: 'scelta dello chef', isNew: 'novità',
@@ -887,10 +810,15 @@ const I18N = {
         add: 'Aggiungi', viewCart: 'Vedi Ordine', orderSummary: 'Il Tuo Ordine', sendWA: 'Invia Ordine su WhatsApp',
         notePh: 'Note (es. poco piccante, senza cipolla)…',
         tableLbl: 'Tavolo', tapReview: 'Tocca per rivedere e aggiungere note',
-        topSpread: 'Tavolata AR', heroSpreadBtn: 'Posiziona Menu Completo in AR',
-        cbTitle: 'Vedi l’Intero Menu sul Tuo Tavolo in AR',
-        cbDesc: 'Posiziona antipasto, portata principale e dolce insieme sul tavolo a grandezza reale.',
-        cbLaunch: 'Avvia Tavolata in AR', cbCustomize: 'Personalizza' },
+        spreadHero: 'Tavola Completa', spreadMain: 'Crea una Tavola Completa in AR',
+        spreadTitle: 'AR a Tavola Intera', spreadSub: 'Scegli più piatti e vedi la tavola completa in una volta — antipasto, secondo e dolce insieme.',
+        spreadFull: 'Antipasto + Secondo + Dolce', spreadMine: 'Il Mio Ordine', spreadClear: 'Svuota',
+        spreadSelected: 'selezionati', spreadGo: 'Vedi la Tavola Completa', spreadBuilding: 'Preparo la tavola…', spreadReady: 'Pronto — Tocca per Posizionare',
+        spreadAddAll: '+ Aggiungi tutto all\'ordine', spreadAdded: 'Tutti i piatti aggiunti all\'ordine',
+        spreadMax: 'Puoi posizionare fino a 6 piatti', spreadNone: 'Scegli almeno un piatto', spreadNoCart: 'Il tuo ordine è vuoto',
+        spreadNoDishes: 'Nessun piatto AR disponibile', spreadNote: 'I piatti sono posizionati affiancati a grandezza reale. Funziona meglio con Chrome su Android (WebXR) e iPhone (AR Quick Look).',
+        spreadFail: 'Impossibile creare la tavola. Riprova.', spreadUnsupported: 'AR a tavola intera non supportata su questo dispositivo',
+        spreadChip: 'Tavola completa', spreadDishes: 'piatti', spreadInOrder: '✓ Tavola nell\'ordine', spreadSeeMine: '🍽️ Vedi il mio ordine sul tavolo', spreadReadyToast: 'Tavola pronta — tocca per posizionarla' },
   kn: { sub: 'ಅಧಿಕೃತ ಇಟಾಲಿಯನ್ ಆಹಾರ', badge: '3D ಮತ್ತು AR ಮುನ್ನೋಟ', veg: 'ಸಸ್ಯಾಹಾರಿ', loading: 'ಲೋಡ್ ಆಗುತ್ತಿದೆ...',
         search: 'ಖಾದ್ಯಗಳನ್ನು ಹುಡುಕಿ…', vegOnly: 'ಸಸ್ಯಾಹಾರ ಮಾತ್ರ', empty: 'ಯಾವುದೇ ಖಾದ್ಯ ಸಿಗಲಿಲ್ಲ', viewAR: 'ಟೇಬಲ್ ಮೇಲೆ ನೋಡಿ', viewTable: 'ಟೇಬಲ್ ಮೇಲೆ ನೋಡಿ',
         launching: 'ಲೋಡ್ ಆಗುತ್ತಿದೆ…', launch: 'AR ಆರಂಭಿಸಿ', retry: 'ಮರುಪ್ರಯತ್ನ', pick: 'ಬಾಣಸಿಗರ ಆಯ್ಕೆ', isNew: 'ಹೊಸ',
@@ -961,6 +889,7 @@ function showToast(msg) {
 
 /* ───────────── TABLE NUMBER (FROM ?table=5 OR SESSION) & CART STATE ───────────── */
 let tableNumber = '';
+// cart structure: { [dishId]: { qty: number, note: string } }
 let cart = {};
 let generalOrderNote = '';
 
@@ -1015,7 +944,7 @@ function getDishQty(id) {
   return cart[id]?.qty || 0;
 }
 
-function changeCartQty(id, delta) {
+function changeCartQty(id, delta, silent = false) {
   const d = allDishes.find(x => x.id === id);
   if (!d) return;
   const cur = cart[id]?.qty || 0;
@@ -1024,7 +953,7 @@ function changeCartQty(id, delta) {
     delete cart[id];
   } else {
     cart[id] = { qty: next, note: cart[id]?.note || '' };
-    if (cur === 0 && delta > 0) showToast(`✓ Added ${d.name}`);
+    if (!silent && cur === 0 && delta > 0) showToast(`✓ Added ${d.name}`);
   }
   saveCartState();
   refreshAllCartControls();
@@ -1094,9 +1023,12 @@ function refreshAllCartControls() {
   }
   const arBtn = $('ar-add-btn');
   if (arBtn) {
-    if (isSpreadARActive && activeSpreadDishes.length) {
-      const sum = activeSpreadDishes.reduce((s, d) => s + d.price, 0);
-      arBtn.textContent = `+ Add Full Spread (${activeSpreadDishes.length} Dishes · ₹${sum.toLocaleString('en-IN')})`;
+    if (spreadMode && spreadDishes.length) {
+      const missing = spreadDishes.filter(d => getDishQty(d.id) <= 0);
+      const totalAll = missing.reduce((s, d) => s + d.price, 0);
+      arBtn.textContent = missing.length
+        ? `+ Add all ${missing.length} · ₹${totalAll.toLocaleString('en-IN')}`
+        : T().spreadInOrder;
     } else if (currentARDish) {
       const q = getDishQty(currentARDish.id);
       arBtn.textContent = q > 0 ? `✓ In Order (${q}) · +1` : `+ Add ${currentARDish.name} (₹${currentARDish.price})`;
@@ -1118,6 +1050,7 @@ function refreshAllCartControls() {
   if ($('cart-modal').classList.contains('open')) {
     renderCartModalList();
   }
+  scheduleCartPrep();
 }
 
 function renderCartModalList() {
@@ -1130,6 +1063,7 @@ function renderCartModalList() {
 
   if (!items.length) {
     listEl.innerHTML = `<p style="text-align:center;padding:1.6rem 0;color:var(--ink-soft);font-style:italic;">Your cart is empty. Add dishes from the menu to place an order.</p>`;
+    updateCartPlaceBtn();
     return;
   }
 
@@ -1151,6 +1085,7 @@ function renderCartModalList() {
   listEl.querySelectorAll('[data-note-id]').forEach(inp => {
     inp.addEventListener('input', e => setDishNote(inp.dataset.noteId, e.target.value));
   });
+  updateCartPlaceBtn();
 }
 
 function openCartModal() {
@@ -1321,6 +1256,7 @@ function catLabel(cat) {
   return map ? (map[currentLang] || map.en) : (cat.charAt(0).toUpperCase() + cat.slice(1).replace(/-/g, ' '));
 }
 
+/* Tabs now only jump the 3D showcase; the Full Menu list below always shows every category */
 function renderTabs() {
   const cats = ['all', 'starter', 'main-course', 'dessert'];
   const wrap = $('tabs-inner');
@@ -1329,6 +1265,7 @@ function renderTabs() {
 }
 
 const SVG_CUBE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`;
+const SVG_TABLE = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M3 3v6M21 3v6"/></svg>`;
 
 function cardHTML(d) {
   const t = T();
@@ -1375,6 +1312,8 @@ function bindCardTilt(card) {
   card.addEventListener('pointerleave', () => { card.style.setProperty('--hry', '0deg'); card.style.setProperty('--hrx', '0deg'); });
 }
 
+/* FULL MENU LIST — always every category, in Starter → Main → Dessert → Other order.
+   Only the search box and the Veg-only toggle narrow it down. */
 function renderItems() {
   const q = query.trim().toLowerCase();
   const filtered = allDishes.filter(d =>
@@ -1404,474 +1343,8 @@ function renderItems() {
   update();
 }
 
-/* ───────────── COMBO / WHOLE-TABLE MULTI-DISH 3D & AR COMPOSER ───────────── */
-const globalAR = $('global-ar-viewer');
-let threeLibsPromise = null;
-const gltfSceneCache = new Map();
-const spreadBlobCache = new Map(); // cacheKey -> { glbUrl, usdzUrl, scale }
-let selectedSpreadIds = [];
-let isSpreadARActive = false;
-let activeSpreadDishes = [];
-let preparedSpreadBundle = null; // Holds pre-built { glbUrl, usdzUrl, scale, dishes } ready for 1-tap synchronous AR launch
-let isPreparingSpread = false;
-
-async function loadThreeSpreadComposerLibs() {
-  if (!threeLibsPromise) {
-    threeLibsPromise = Promise.all([
-      import('https://esm.sh/three@0.160.0'),
-      import('https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js'),
-      import('https://esm.sh/three@0.160.0/examples/jsm/exporters/GLTFExporter.js'),
-      import('https://esm.sh/three@0.160.0/examples/jsm/exporters/USDZExporter.js')
-    ]).then(([THREE, { GLTFLoader }, { GLTFExporter }, { USDZExporter }]) => ({
-      THREE, GLTFLoader, GLTFExporter, USDZExporter
-    }));
-  }
-  return threeLibsPromise;
-}
-
-function getTableSpreadLayoutOffsets(count) {
-  if (count <= 1) return [{ x: 0, z: 0, rotY: 0 }];
-  if (count === 2) {
-    return [
-      { x: -0.18, z: 0.02, rotY: 0.15 },
-      { x:  0.18, z: -0.02, rotY: -0.15 }
-    ];
-  }
-  if (count === 3) {
-    return [
-      { x: -0.25, z: 0.08, rotY: 0.22 },
-      { x:  0.00, z: -0.05, rotY: 0.00 },
-      { x:  0.25, z: 0.08, rotY: -0.22 }
-    ];
-  }
-  const radiusX = 0.28;
-  const radiusZ = 0.20;
-  return Array.from({ length: count }, (_, i) => {
-    const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
-    return {
-      x: Math.cos(angle) * radiusX,
-      z: Math.sin(angle) * radiusZ,
-      rotY: -angle + Math.PI / 2
-    };
-  });
-}
-
-async function buildCombinedSpreadBundle(dishes) {
-  const valid = dishes.filter(d => d && d.glbPath);
-  if (!valid.length) throw new Error('No 3D dishes selected');
-  if (valid.length === 1) {
-    return {
-      glbUrl: valid[0].glbPath,
-      usdzUrl: valid[0].usdzPath || '',
-      scale: valid[0].scale ?? 1,
-      isBlob: false,
-      dishes: valid
-    };
-  }
-
-  const cacheKey = valid.map(d => d.id).join('__');
-  if (spreadBlobCache.has(cacheKey)) {
-    return spreadBlobCache.get(cacheKey);
-  }
-
-  const { THREE, GLTFLoader, GLTFExporter, USDZExporter } = await loadThreeSpreadComposerLibs();
-  const loader = new GLTFLoader();
-  const rootScene = new THREE.Scene();
-  const offsets = getTableSpreadLayoutOffsets(valid.length);
-
-  for (let i = 0; i < valid.length; i++) {
-    const dish = valid[i];
-    let baseGltf = gltfSceneCache.get(dish.glbPath);
-    if (!baseGltf) {
-      baseGltf = await new Promise((resolve, reject) => {
-        loader.load(dish.glbPath, resolve, undefined, reject);
-      });
-      gltfSceneCache.set(dish.glbPath, baseGltf);
-    }
-
-    const clone = baseGltf.scene.clone(true);
-    const s = Number(dish.scale ?? 0.75);
-    clone.scale.set(s, s, s);
-    clone.updateMatrixWorld(true);
-
-    const box = new THREE.Box3().setFromObject(clone);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-
-    const wrapper = new THREE.Group();
-    clone.position.set(-center.x, -box.min.y, -center.z);
-    wrapper.add(clone);
-
-    const pos = offsets[i] || { x: (i - 1) * 0.22, z: 0, rotY: 0 };
-    wrapper.position.set(pos.x, 0, pos.z);
-    wrapper.rotation.y = pos.rotY || 0;
-    rootScene.add(wrapper);
-  }
-
-  rootScene.updateMatrixWorld(true);
-
-  // 1) Export combined GLB for WebXR / 3D Viewer
-  const gltfExporter = new GLTFExporter();
-  const glbBuffer = await new Promise((resolve, reject) => {
-    gltfExporter.parse(
-      rootScene,
-      res => resolve(res),
-      err => reject(err),
-      { binary: true }
-    );
-  });
-  const glbBlob = new Blob([glbBuffer], { type: 'model/gltf-binary' });
-  const glbUrl = URL.createObjectURL(glbBlob);
-
-  // 2) Export combined USDZ on iOS so Apple Quick Look can place the whole spread
-  let usdzUrl = '';
-  if (isIOS && USDZExporter) {
-    try {
-      const usdzExporter = new USDZExporter();
-      const usdzBuffer = await usdzExporter.parse(rootScene);
-      const usdzBlob = new Blob([usdzBuffer], { type: 'model/vnd.usdz+zip' });
-      usdzUrl = URL.createObjectURL(usdzBlob);
-    } catch (uErr) {
-      console.warn('USDZ multi-dish export fallback:', uErr);
-    }
-  }
-
-  const bundle = { glbUrl, usdzUrl, scale: 1, isBlob: true, dishes: valid };
-  spreadBlobCache.set(cacheKey, bundle);
-  return bundle;
-}
-
-// Pre-loads the combined spread into `#global-ar-viewer` BEFORE the user clicks "Place Spread",
-// so that `globalAR.activateAR()` can be called synchronously inside the click handler!
-async function stageSpreadIntoGlobalAR(dishes) {
-  const valid = dishes.filter(d => d && d.glbPath);
-  if (!valid.length) return null;
-  isPreparingSpread = true;
-  const bundle = await buildCombinedSpreadBundle(valid);
-  preparedSpreadBundle = bundle;
-  activeSpreadDishes = valid;
-  isSpreadARActive = true;
-  currentARDish = valid[0];
-
-  const s = Number(bundle.scale || 1).toFixed(4);
-  globalAR.setAttribute('scale', `${s} ${s} ${s}`);
-  globalAR.setAttribute('ar-placement', 'floor');
-  globalAR.setAttribute('ar-scale', 'fixed');
-  globalAR.setAttribute('shadow-intensity', '1');
-  globalAR.setAttribute('shadow-softness', '0.9');
-
-  // CRITICAL FIX: Android Scene Viewer cannot load `blob:` URLs.
-  // When using an in-memory merged blob URL, use `webxr quick-look` so Android launches WebXR directly.
-  if (bundle.isBlob) {
-    globalAR.setAttribute('ar-modes', 'webxr quick-look');
-  } else {
-    globalAR.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
-  }
-
-  if (bundle.usdzUrl) {
-    globalAR.setAttribute('ios-src', bundle.usdzUrl);
-  } else {
-    globalAR.removeAttribute('ios-src');
-  }
-
-  if (globalAR.getAttribute('src') !== bundle.glbUrl) {
-    await new Promise(resolve => {
-      const done = () => {
-        globalAR.removeEventListener('load', done);
-        globalAR.removeEventListener('error', done);
-        resolve();
-      };
-      globalAR.addEventListener('load', done);
-      globalAR.addEventListener('error', done);
-      globalAR.setAttribute('src', bundle.glbUrl);
-    });
-  }
-  isPreparingSpread = false;
-  return bundle;
-}
-
-function getDefault3CourseDishes() {
-  const arDishes = getARDishes();
-  if (!arDishes.length) return [];
-  const starter = arDishes.find(d => d.category === 'starter');
-  const main = arDishes.find(d => d.category === 'main-course');
-  const dessert = arDishes.find(d => d.category === 'dessert');
-  const picked = [];
-  if (starter) picked.push(starter);
-  if (main && !picked.includes(main)) picked.push(main);
-  if (dessert && !picked.includes(dessert)) picked.push(dessert);
-  for (const d of arDishes) {
-    if (picked.length >= 3) break;
-    if (!picked.includes(d)) picked.push(d);
-  }
-  return picked;
-}
-
-function renderComboBannerPreview() {
-  const wrap = $('cb-slots-preview');
-  if (!wrap) return;
-  const defaults = getDefault3CourseDishes();
-  if (!defaults.length) {
-    $('combo-banner-wrap').style.display = 'none';
-    return;
-  }
-  $('combo-banner-wrap').style.display = '';
-  const total = defaults.reduce((s, d) => s + d.price, 0);
-  wrap.innerHTML = defaults.map(d => `
-    <span class="cb-mini-chip">
-      <b>${esc(catLabel(d.category))}</b>
-      <span>${esc(d.emoji)} ${esc(d.name)}</span>
-    </span>
-  `).join('') + `<span class="cb-mini-chip" style="background:rgba(217,178,95,.25);border-color:var(--gold);"><b>Combo Total</b><span>₹${total.toLocaleString('en-IN')}</span></span>`;
-}
-
-function populateSpreadModalControls() {
-  const arDishes = getARDishes();
-  if (!selectedSpreadIds.length) {
-    selectedSpreadIds = getDefault3CourseDishes().map(d => d.id);
-  }
-
-  const starterSelect = $('spread-slot-starter');
-  const mainSelect = $('spread-slot-main');
-  const dessertSelect = $('spread-slot-dessert');
-
-  const fillSlot = (sel, preferredCat, slotIndex) => {
-    const sorted = arDishes.slice().sort((a, b) => (a.category === preferredCat ? -1 : 1) - (b.category === preferredCat ? -1 : 1));
-    const currentId = selectedSpreadIds[slotIndex] || '';
-    sel.innerHTML = `<option value="">— None —</option>` + sorted.map(d =>
-      `<option value="${esc(d.id)}"${d.id === currentId ? ' selected' : ''}>${esc(d.emoji)} ${esc(d.name)} (₹${d.price})</option>`
-    ).join('');
-  };
-
-  fillSlot(starterSelect, 'starter', 0);
-  fillSlot(mainSelect, 'main-course', 1);
-  fillSlot(dessertSelect, 'dessert', 2);
-
-  renderSpreadChipsPool();
-  updateSpreadModalSummaryAndPreview();
-}
-
-function renderSpreadChipsPool() {
-  const pool = $('spread-chips-pool');
-  if (!pool) return;
-  const arDishes = getARDishes();
-  pool.innerHTML = arDishes.map(d => {
-    const isSel = selectedSpreadIds.includes(d.id);
-    return `<button type="button" class="spread-dish-toggle${isSel ? ' selected' : ''}" data-spread-toggle="${esc(d.id)}">
-      <span>${esc(d.emoji)} ${esc(d.name)}</span>
-      <span style="opacity:.8">₹${d.price}</span>
-    </button>`;
-  }).join('');
-
-  pool.querySelectorAll('[data-spread-toggle]').forEach(btn => {
-    btn.onclick = () => {
-      const id = btn.dataset.spreadToggle;
-      if (selectedSpreadIds.includes(id)) {
-        if (selectedSpreadIds.length <= 1) {
-          showToast('Keep at least 1 dish in the spread');
-          return;
-        }
-        selectedSpreadIds = selectedSpreadIds.filter(x => x !== id);
-      } else {
-        if (selectedSpreadIds.length >= 6) {
-          showToast('Maximum 6 dishes per table spread');
-          return;
-        }
-        selectedSpreadIds.push(id);
-      }
-      populateSpreadModalControls();
-    };
-  });
-}
-
-function syncSlotsToSelectedIds() {
-  const ids = [
-    $('spread-slot-starter').value,
-    $('spread-slot-main').value,
-    $('spread-slot-dessert').value
-  ].filter(Boolean);
-  selectedSpreadIds = [...new Set(ids)];
-  renderSpreadChipsPool();
-  updateSpreadModalSummaryAndPreview();
-}
-
-['spread-slot-starter', 'spread-slot-main', 'spread-slot-dessert'].forEach(id => {
-  const el = $(id);
-  if (el) el.addEventListener('change', syncSlotsToSelectedIds);
-});
-
-async function updateSpreadModalSummaryAndPreview() {
-  const dishes = selectedSpreadIds.map(id => allDishes.find(d => d.id === id)).filter(Boolean);
-  const total = dishes.reduce((s, d) => s + d.price, 0);
-  $('spread-sum-count').textContent = `${dishes.length} ${dishes.length === 1 ? 'Dish' : 'Dishes'} on Table`;
-  $('spread-sum-price').textContent = `₹${total.toLocaleString('en-IN')}`;
-
-  const statusEl = $('spread-viewer-status');
-  const statusTxt = $('spread-status-text');
-  const previewMV = $('spread-preview-mv');
-  const goBtn = $('spread-launch-ar-btn');
-  const goTxt = $('spread-launch-ar-text');
-  const hintEl = $('spread-ready-hint');
-  if (!dishes.length) return;
-
-  statusEl.classList.remove('hidden');
-  statusTxt.textContent = `Composing ${dishes.length}-Dish 3D Spread…`;
-  goBtn.disabled = true;
-  goTxt.textContent = 'Preparing Spread…';
-  if (hintEl) hintEl.textContent = 'Building 3D table layout…';
-
-  try {
-    // Stage into BOTH the modal preview AND `#global-ar-viewer` so tapping "Place Spread on Table (AR)" is instant & synchronous!
-    const bundle = await stageSpreadIntoGlobalAR(dishes);
-    if (bundle) {
-      const s = Number(bundle.scale || 1).toFixed(4);
-      previewMV.setAttribute('scale', `${s} ${s} ${s}`);
-      previewMV.setAttribute('src', bundle.glbUrl);
-    }
-    statusEl.classList.add('hidden');
-    goBtn.disabled = false;
-    goTxt.textContent = 'Place Spread on Table (AR)';
-    if (hintEl) hintEl.textContent = '✦ AR Spread Ready · Tap below to place';
-  } catch (err) {
-    console.warn('Spread preview compose error:', err);
-    statusEl.classList.add('hidden');
-    goBtn.disabled = false;
-    goTxt.textContent = 'Place Spread on Table (AR)';
-    if (hintEl) hintEl.textContent = 'Ready for 3D / AR';
-  }
-}
-
-function openSpreadModal(customIds = null) {
-  if (Array.isArray(customIds) && customIds.length) {
-    selectedSpreadIds = [...new Set(customIds)].slice(0, 6);
-  } else if (!selectedSpreadIds.length) {
-    selectedSpreadIds = getDefault3CourseDishes().map(d => d.id);
-  }
-  populateSpreadModalControls();
-  $('spread-modal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeSpreadModal() {
-  $('spread-modal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-$('spread-close').addEventListener('click', closeSpreadModal);
-$('spread-modal').addEventListener('click', e => { if (e.target === $('spread-modal')) closeSpreadModal(); });
-
-$('preset-3course').addEventListener('click', e => {
-  document.querySelectorAll('.spread-preset-btn').forEach(b => b.classList.remove('active'));
-  e.currentTarget.classList.add('active');
-  selectedSpreadIds = getDefault3CourseDishes().map(d => d.id);
-  populateSpreadModalControls();
-});
-
-$('preset-veg').addEventListener('click', e => {
-  document.querySelectorAll('.spread-preset-btn').forEach(b => b.classList.remove('active'));
-  e.currentTarget.classList.add('active');
-  const vegDishes = getARDishes().filter(d => d.veg);
-  selectedSpreadIds = (vegDishes.length ? vegDishes : getDefault3CourseDishes()).slice(0, 4).map(d => d.id);
-  populateSpreadModalControls();
-});
-
-$('preset-all').addEventListener('click', e => {
-  document.querySelectorAll('.spread-preset-btn').forEach(b => b.classList.remove('active'));
-  e.currentTarget.classList.add('active');
-  selectedSpreadIds = getARDishes().slice(0, 6).map(d => d.id);
-  populateSpreadModalControls();
-});
-
-$('preset-cart').addEventListener('click', e => {
-  const { items } = getCartTotals();
-  const cartAR = items.map(x => x.dish).filter(d => d.glbPath);
-  if (!cartAR.length) {
-    showToast('Add AR dishes to your order first, or pick from the slots below');
-    return;
-  }
-  document.querySelectorAll('.spread-preset-btn').forEach(b => b.classList.remove('active'));
-  e.currentTarget.classList.add('active');
-  selectedSpreadIds = cartAR.slice(0, 6).map(d => d.id);
-  populateSpreadModalControls();
-});
-
-$('spread-add-cart-btn').addEventListener('click', () => {
-  const dishes = selectedSpreadIds.map(id => allDishes.find(d => d.id === id)).filter(Boolean);
-  if (!dishes.length) return;
-  dishes.forEach(d => changeCartQty(d.id, 1));
-  showToast(`✓ Added ${dishes.length} spread dishes to your order`);
-});
-
-// SYNCHRONOUS AR ACTIVATION FROM SPREAD MODAL (preserves mobile browser user gesture!)
-function triggerPreparedSpreadARNow() {
-  if (!preparedSpreadBundle) {
-    showToast('Still preparing 3D models, please tap again in a moment');
-    return;
-  }
-
-  // iOS Quick Look direct launch using generated USDZ blob
-  if (isIOS && preparedSpreadBundle.usdzUrl) {
-    const a = document.createElement('a');
-    a.setAttribute('rel', 'ar');
-    a.setAttribute('href', preparedSpreadBundle.usdzUrl);
-    const img = document.createElement('img');
-    a.appendChild(img);
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    return;
-  }
-
-  renderARCarousel();
-  refreshAllCartControls();
-  $('ar-spread-mode-btn').classList.add('active');
-  closeSpreadModal();
-
-  try {
-    globalAR.activateAR();
-  } catch (err) {
-    console.warn('Direct Spread AR activation failed:', err);
-    showToast('AR requires a compatible mobile browser (Chrome on Android or Safari on iOS)');
-  }
-}
-
-$('spread-launch-ar-btn').addEventListener('click', () => {
-  triggerPreparedSpreadARNow();
-});
-
-$('hero-top-spread-btn').addEventListener('click', () => openSpreadModal());
-$('hero-spread-cta').addEventListener('click', () => openSpreadModal());
-$('cb-open-builder-btn').addEventListener('click', () => openSpreadModal());
-
-// Quick launch button on the banner: if the default 3-course spread is already pre-warmed, launch AR synchronously; otherwise open builder modal
-$('cb-quick-launch-btn').addEventListener('click', () => {
-  const defaults = getDefault3CourseDishes();
-  if (preparedSpreadBundle && isSpreadARActive && globalAR.loaded) {
-    triggerPreparedSpreadARNow();
-  } else {
-    openSpreadModal(defaults.map(d => d.id));
-  }
-});
-
-$('fc-spread-ar-btn').addEventListener('click', e => {
-  e.stopPropagation();
-  const { items } = getCartTotals();
-  const cartAR = items.map(x => x.dish).filter(d => d.glbPath);
-  openSpreadModal(cartAR.length ? cartAR.slice(0, 6).map(d => d.id) : null);
-});
-
-$('cart-view-spread-ar-btn').addEventListener('click', () => {
-  const { items } = getCartTotals();
-  const cartAR = items.map(x => x.dish).filter(d => d.glbPath);
-  if (!cartAR.length) {
-    showToast('Add dishes with 3D/AR models to preview on your table');
-    return;
-  }
-  closeCartModal();
-  openSpreadModal(cartAR.slice(0, 6).map(d => d.id));
-});
-
 /* ───────────── DIRECT AR LAUNCHER + DISH CAROUSEL HUD ───────────── */
+const globalAR = $('global-ar-viewer');
 let currentARDish = null;
 let lastCapturedDataUrl = '';
 
@@ -1890,38 +1363,38 @@ function setBackgroundRender(on) {
 
 function preloadModels() {
   const run = async () => {
+    // Warm up the whole-table engine in the background so the spread builds fast later
+    loadThreeLib()
+      .then(() => Promise.all(getARDishes().map(d => getGLTFScene(d.glbPath))))
+      .catch(() => {});
     for (const d of getARDishes()) {
       try { await fetch(isIOS && d.usdzPath ? d.usdzPath : d.glbPath); } catch (e) {}
     }
-    // Pre-build the default 3-Course Spread in the background so it's ready right away
-    const defaults = getDefault3CourseDishes();
-    if (defaults.length) {
-      try { await stageSpreadIntoGlobalAR(defaults); } catch (e) {}
-    }
+    const first = getARDishes()[0];
+    if (first) warmAR(first);
   };
-  (window.requestIdleCallback || (f => setTimeout(f, 1200)))(run);
+  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(run);
 }
 
 function warmAR(d) {
   if (isIOS || !d || !d.glbPath) return;
-  isSpreadARActive = false;
-  globalAR.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
-  applyARSize(d);
+  if (spreadMode) return; // never swap the viewer's model while a table spread is loaded
   if (globalAR.getAttribute('src') !== d.glbPath) globalAR.setAttribute('src', d.glbPath);
 }
 
-function ensureARModel(d) {
+/* Wait until the global viewer has `url` loaded (works for dish GLBs and for the combined spread blob). */
+function ensureARSrc(url) {
   return new Promise((resolve, reject) => {
-    globalAR.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
-    if (globalAR.getAttribute('src') === d.glbPath && globalAR.loaded) return resolve();
+    if (globalAR.getAttribute('src') === url && globalAR.loaded) return resolve();
     const cleanup = () => { globalAR.removeEventListener('load', ok); globalAR.removeEventListener('error', bad); };
     const ok = () => { cleanup(); resolve(); };
     const bad = () => { cleanup(); reject(new Error('model load failed')); };
     globalAR.addEventListener('load', ok);
     globalAR.addEventListener('error', bad);
-    if (globalAR.getAttribute('src') !== d.glbPath) globalAR.setAttribute('src', d.glbPath);
+    if (globalAR.getAttribute('src') !== url) globalAR.setAttribute('src', url);
   });
 }
+function ensureARModel(d) { return ensureARSrc(d.glbPath); }
 
 document.addEventListener('pointerdown', e => {
   const b = e.target.closest && e.target.closest('.ar-btn[data-id], #sc-ar');
@@ -1949,20 +1422,8 @@ function renderARCarousel() {
   const wrap = $('ar-carousel');
   if (!wrap) return;
   const arDishes = getARDishes();
-  const spreadDefaults = activeSpreadDishes.length ? activeSpreadDishes : getDefault3CourseDishes();
-  const spreadTotal = spreadDefaults.reduce((s, d) => s + d.price, 0);
-
-  const spreadChipHTML = spreadDefaults.length > 1 ? `
-    <button type="button" class="ar-carousel-item${isSpreadARActive ? ' active' : ''}" data-ar-spread="true" role="option" aria-selected="${isSpreadARActive}">
-      <span class="ar-c-thumb"><span>🍱</span></span>
-      <span class="ar-c-meta">
-        <span class="ar-c-name">Full ${spreadDefaults.length}-Dish Spread</span>
-        <span class="ar-c-price">₹${spreadTotal.toLocaleString('en-IN')} · All on Table</span>
-      </span>
-    </button>` : '';
-
-  wrap.innerHTML = spreadChipHTML + arDishes.map(d => {
-    const isActive = !isSpreadARActive && currentARDish && currentARDish.id === d.id;
+  wrap.innerHTML = arDishes.map(d => {
+    const isActive = currentARDish && currentARDish.id === d.id;
     const thumb = d.posterPath
       ? `<img src="${esc(d.posterPath)}" alt="${esc(d.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none">${d.emoji}</span>`
       : `<span>${d.emoji}</span>`;
@@ -1976,50 +1437,15 @@ function renderARCarousel() {
       </button>`;
   }).join('');
 
-  wrap.querySelectorAll('.ar-carousel-item[data-ar-id]').forEach(btn => {
+  wrap.querySelectorAll('.ar-carousel-item').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       switchARDish(btn.dataset.arId);
     });
   });
-  const spreadBtn = wrap.querySelector('[data-ar-spread]');
-  if (spreadBtn) {
-    spreadBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      switchToSpreadInAR();
-    });
-  }
   scrollActiveCarouselItemIntoView();
   refreshAllCartControls();
 }
-
-async function switchToSpreadInAR() {
-  const dishes = activeSpreadDishes.length ? activeSpreadDishes : getDefault3CourseDishes();
-  if (!dishes.length) return;
-  try {
-    const bundle = await buildCombinedSpreadBundle(dishes);
-    isSpreadARActive = true;
-    activeSpreadDishes = dishes;
-    preparedSpreadBundle = bundle;
-    const s = Number(bundle.scale || 1).toFixed(4);
-    globalAR.setAttribute('scale', `${s} ${s} ${s}`);
-    if (globalAR.getAttribute('src') !== bundle.glbUrl) globalAR.setAttribute('src', bundle.glbUrl);
-    $('ar-spread-mode-btn').classList.add('active');
-    renderARCarousel();
-    refreshAllCartControls();
-  } catch (e) {
-    console.warn('In-AR spread switch error:', e);
-  }
-}
-
-$('ar-spread-mode-btn').addEventListener('click', e => {
-  e.stopPropagation();
-  if (isSpreadARActive && currentARDish) {
-    switchARDish(currentARDish.id);
-  } else {
-    switchToSpreadInAR();
-  }
-});
 
 function scrollActiveCarouselItemIntoView() {
   const wrap = $('ar-carousel');
@@ -2029,22 +1455,29 @@ function scrollActiveCarouselItemIntoView() {
 }
 
 function switchARDish(id) {
+  if (spreadMode) return;
   const d = allDishes.find(x => x.id === id);
   if (!d || !d.glbPath) return;
-  isSpreadARActive = false;
   currentARDish = d;
-  $('ar-spread-mode-btn').classList.remove('active');
 
-  globalAR.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
   applyARSize(d);
   if (d.usdzPath) globalAR.setAttribute('ios-src', d.usdzPath);
   if (globalAR.getAttribute('src') !== d.glbPath) globalAR.setAttribute('src', d.glbPath);
 
-  renderARCarousel();
+  const wrap = $('ar-carousel');
+  if (wrap) {
+    wrap.querySelectorAll('.ar-carousel-item').forEach(btn => {
+      const active = btn.dataset.arId === d.id;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', String(active));
+    });
+    scrollActiveCarouselItemIntoView();
+  }
   refreshAllCartControls();
 }
 
 function stepARDish(dir) {
+  if (spreadMode) return;
   const list = getARDishes();
   if (!list.length) return;
   const idx = list.findIndex(x => currentARDish && x.id === currentARDish.id);
@@ -2056,12 +1489,13 @@ $('ar-side-prev').addEventListener('click', e => { e.stopPropagation(); stepARDi
 $('ar-side-next').addEventListener('click', e => { e.stopPropagation(); stepARDish(1); });
 $('ar-add-btn').addEventListener('click', e => {
   e.stopPropagation();
-  if (isSpreadARActive && activeSpreadDishes.length) {
-    activeSpreadDishes.forEach(d => changeCartQty(d.id, 1));
-    showToast(`✓ Added ${activeSpreadDishes.length} spread dishes to Order`);
-  } else if (currentARDish) {
-    changeCartQty(currentARDish.id, 1);
+  if (spreadMode && spreadDishes.length) {
+    let added = 0;
+    spreadDishes.forEach(d => { if (getDishQty(d.id) <= 0) { changeCartQty(d.id, 1, true); added++; } });
+    if (added) showToast(`✓ ${T().spreadAdded}`);
+    return;
   }
+  if (currentARDish) changeCartQty(currentARDish.id, 1);
 });
 
 async function exitARSession() {
@@ -2073,11 +1507,8 @@ $('ar-close-btn').addEventListener('click', exitARSession);
 
 $('ar-to-3d-btn').addEventListener('click', async () => {
   await exitARSession();
-  if (isSpreadARActive && activeSpreadDishes.length) {
-    openSpreadModal(activeSpreadDishes.map(d => d.id));
-  } else if (currentARDish) {
-    openModal(currentARDish.id, true);
-  }
+  if (spreadMode) { openSpreadModal(); return; }
+  if (currentARDish) openModal(currentARDish.id, true);
 });
 
 $('ar-shutter-btn').addEventListener('click', async () => {
@@ -2094,7 +1525,8 @@ $('ar-shutter-btn').addEventListener('click', async () => {
     $('ar-gallery-icon').style.display = 'none';
     $('capture-preview-img').src = lastCapturedDataUrl;
     $('capture-download-btn').href = lastCapturedDataUrl;
-    $('capture-download-btn').download = `${(isSpreadARActive ? 'Table-Spread' : (currentARDish?.name || 'Pinocchio-Dish')).replace(/\s+/g, '-')}-AR.png`;
+    const baseName = spreadMode ? 'Table-Spread' : (currentARDish?.name || 'Pinocchio-Dish');
+    $('capture-download-btn').download = `${baseName.replace(/\s+/g, '-')}-AR.png`;
   } catch (err) {
     console.warn('Snapshot capture error:', err);
   }
@@ -2120,8 +1552,12 @@ globalAR.addEventListener('ar-status', e => {
     globalAR.classList.add('ar-active');
     setBackgroundRender(false);
     applyARShadow();
-    if (!isSpreadARActive) applyARSize(currentARDish);
-    renderARCarousel();
+    if (spreadMode) {
+      updateSpreadHUD();
+    } else {
+      applyARSize(currentARDish);
+      renderARCarousel();
+    }
   } else if (st === 'object-placed') {
     globalAR.classList.add('ar-active');
   } else if (st === 'not-presenting' || st === 'failed') {
@@ -2130,12 +1566,18 @@ globalAR.addEventListener('ar-status', e => {
   }
 });
 
+/* Switch the global viewer back to normal single-dish behaviour */
+function resetSingleARMode() {
+  spreadMode = false;
+  globalAR.classList.remove('spread-mode');
+  globalAR.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
+}
+
 function launchDirectAR(id, triggerBtn) {
   const d = allDishes.find(x => x.id === id);
   if (!d || !d.glbPath) return;
-  isSpreadARActive = false;
   currentARDish = d;
-  $('ar-spread-mode-btn').classList.remove('active');
+  resetSingleARMode();
   const t = T();
 
   if (isIOS && d.usdzPath) {
@@ -2151,26 +1593,16 @@ function launchDirectAR(id, triggerBtn) {
     return;
   }
 
-  globalAR.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
-  applyARShadow();
-  applyARSize(d);
-  if (d.usdzPath) globalAR.setAttribute('ios-src', d.usdzPath);
-
-  // If the dish model is already warm & loaded, activate AR synchronously on the click gesture!
-  if (globalAR.getAttribute('src') === d.glbPath && globalAR.loaded) {
-    renderARCarousel();
-    try {
-      globalAR.activateAR();
-      return;
-    } catch (e) {}
-  }
-
   if (triggerBtn) {
     triggerBtn.disabled = true;
     triggerBtn.innerHTML = `<span class="btn-spin"></span>${esc(t.launching)}`;
   }
 
   renderARCarousel();
+  applyARShadow();
+
+  applyARSize(d);
+  if (d.usdzPath) globalAR.setAttribute('ios-src', d.usdzPath);
 
   const restoreBtn = () => {
     if (triggerBtn) {
@@ -2204,6 +1636,431 @@ function launchDirectAR(id, triggerBtn) {
     clearTimeout(timer);
     fallback();
   });
+}
+
+/* ───────────── WHOLE-TABLE AR (TABLE SPREAD) ─────────────
+   model-viewer can only show one model at a time, so we merge the selected
+   dishes into ONE combined GLB in the browser (three.js GLTFLoader + GLTFExporter,
+   loaded lazily only when a guest opens this feature), lay the dishes out side by
+   side at real size, and hand that single model to AR (WebXR on Android, and
+   AR Quick Look on iPhone — model-viewer converts the GLB to USDZ itself). */
+const SPREAD_MAX = 6;
+let spreadMode = false;          // true while the global viewer holds a combined spread
+let spreadDishes = [];           // dishes in the current spread (layout order)
+let spreadSel = [];              // dish ids currently ticked in the picker
+let spreadBlobUrl = '';          // object URL of the combined GLB
+let spreadBuiltKey = '';         // which selection the blob was built for
+let spreadBusy = false;
+const gltfSceneCache = {};
+let threeLibPromise = null;
+
+function loadThreeLib() {
+  if (threeLibPromise) return threeLibPromise;
+  threeLibPromise = (async () => {
+    const [THREE, gl, ex, dr, mo] = await Promise.all([
+      import('three'),
+      import('three/addons/loaders/GLTFLoader.js'),
+      import('three/addons/exporters/GLTFExporter.js'),
+      import('three/addons/loaders/DRACOLoader.js'),
+      import('three/addons/libs/meshopt_decoder.module.js')
+    ]);
+    const draco = new dr.DRACOLoader();
+    draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+    const loader = new gl.GLTFLoader();
+    loader.setDRACOLoader(draco);
+    loader.setMeshoptDecoder(mo.MeshoptDecoder);
+    return { THREE, loader, GLTFExporter: ex.GLTFExporter };
+  })().catch(err => { threeLibPromise = null; throw err; });
+  return threeLibPromise;
+}
+
+async function getGLTFScene(path) {
+  if (gltfSceneCache[path]) return gltfSceneCache[path];
+  const { loader } = await loadThreeLib();
+  const gltf = await loader.loadAsync(path);
+  gltfSceneCache[path] = gltf.scene;
+  return gltf.scene;
+}
+
+/* Combine the dishes into one GLB. Each dish is scaled by its own `scale`
+   (so portions keep their real-world size), grounded on y = 0 and arranged:
+   1 dish = centre · 2 dishes = side by side · 3+ dishes = a ring around the table centre. */
+async function buildSpreadGLB(dishes) {
+  const { THREE, GLTFExporter } = await loadThreeLib();
+  const root = new THREE.Group();
+  root.name = 'TableSpread';
+  const slots = [];
+
+  for (const d of dishes) {
+    const src = await getGLTFScene(d.glbPath);
+    const obj = src.clone(true);
+    const raw = Number(d.scale);
+    const s = Number.isFinite(raw) && raw > 0 ? raw : 0.25;
+    const holder = new THREE.Group();
+    holder.add(obj);
+    holder.scale.setScalar(s);
+    holder.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(holder);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    holder.position.set(-center.x, -box.min.y, -center.z);   // centre on x/z, sit on the table (y = 0)
+    const slot = new THREE.Group();
+    slot.add(holder);
+    slots.push({ slot, footprint: Math.max(size.x, size.z, 0.01) });
+  }
+
+  const maxW = Math.max(...slots.map(s => s.footprint));
+  const pitch = maxW * 1.18;                    // centre-to-centre distance with a small gap
+  const n = slots.length;
+  if (n === 2) {
+    slots[0].slot.position.set(-pitch / 2, 0, 0);
+    slots[1].slot.position.set(pitch / 2, 0, 0);
+  } else if (n >= 3) {
+    const r = pitch / (2 * Math.sin(Math.PI / n));
+    slots.forEach((it, i) => {
+      const th = Math.PI + (i * 2 * Math.PI) / n;
+      it.slot.position.set(r * Math.cos(th), 0, r * Math.sin(th));
+    });
+  }
+  slots.forEach(it => root.add(it.slot));
+  root.updateMatrixWorld(true);
+
+  const exporter = new GLTFExporter();
+  const buffer = await new Promise((resolve, reject) =>
+    exporter.parse(root, resolve, reject, { binary: true, onlyVisible: true, maxTextureSize: 1024 })
+  );
+  return URL.createObjectURL(new Blob([buffer], { type: 'model/gltf-binary' }));
+}
+
+const spreadKey = ids => ids.join('|');
+
+function selectedSpreadDishes() {
+  return spreadSel
+    .map(id => allDishes.find(x => x.id === id))
+    .filter(d => d && d.glbPath && d.available)
+    .sort((a, b) => catRank(a.category) - catRank(b.category));   // starter → main → dessert
+}
+
+function openSpreadModal(preselect) {
+  const ar = getARDishes();
+  if (!ar.length) { showToast(T().spreadNoDishes); return; }
+  if (Array.isArray(preselect)) spreadSel = preselect.filter(id => ar.some(d => d.id === id)).slice(0, SPREAD_MAX);
+  else spreadSel = spreadSel.filter(id => ar.some(d => d.id === id));
+  if (!spreadSel.length && !Array.isArray(preselect)) presetBalanced(true);
+  renderSpreadModal();
+  $('spread-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSpreadModal() {
+  $('spread-modal').classList.remove('open');
+  if (!$('modal-overlay').classList.contains('open') && !$('cart-modal').classList.contains('open')) document.body.style.overflow = '';
+}
+
+function presetBalanced(silent) {
+  const ar = getARDishes();
+  const picked = [];
+  CAT_ORDER.forEach(cat => {
+    const d = ar.find(x => x.category === cat);
+    if (d) picked.push(d.id);
+  });
+  if (picked.length < 3) {
+    ar.forEach(d => { if (picked.length < 3 && !picked.includes(d.id)) picked.push(d.id); });
+  }
+  spreadSel = picked.slice(0, SPREAD_MAX);
+  if (!silent) renderSpreadModal();
+}
+
+function presetFromCart() {
+  const ar = getARDishes();
+  const ids = getCartTotals().items.map(x => x.dish.id).filter(id => ar.some(d => d.id === id)).slice(0, SPREAD_MAX);
+  if (!ids.length) { showToast(T().spreadNoCart); return false; }
+  spreadSel = ids;
+  renderSpreadModal();
+  return true;
+}
+
+function toggleSpread(id) {
+  const i = spreadSel.indexOf(id);
+  if (i >= 0) spreadSel.splice(i, 1);
+  else if (spreadSel.length >= SPREAD_MAX) { showToast(T().spreadMax); return; }
+  else spreadSel.push(id);
+  renderSpreadModal();
+}
+
+function renderSpreadModal() {
+  const t = T();
+  const list = $('spread-list');
+  if (!list) return;
+  const dishes = getARDishes().slice().sort((a, b) => catRank(a.category) - catRank(b.category));
+  list.innerHTML = dishes.length ? dishes.map(d => {
+    const sel = spreadSel.includes(d.id);
+    const thumb = d.posterPath
+      ? `<img src="${esc(d.posterPath)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none">${d.emoji}</span>`
+      : `<span>${d.emoji}</span>`;
+    return `<div class="spread-row${sel ? ' selected' : ''}" data-sp-id="${esc(d.id)}" role="checkbox" aria-checked="${sel}" tabindex="0">
+      <span class="spread-check">${sel ? '✓' : ''}</span>
+      <span class="spread-thumb">${thumb}</span>
+      <span class="spread-meta"><span class="spread-name">${esc(d.name)}</span><span class="spread-cat">${esc(catLabel(d.category))}</span></span>
+      <span class="spread-price">₹${d.price.toLocaleString('en-IN')}</span>
+    </div>`;
+  }).join('') : `<div class="spread-empty">${esc(t.spreadNoDishes)}</div>`;
+
+  const chosen = selectedSpreadDishes();
+  const total = chosen.reduce((s, d) => s + d.price, 0);
+  $('spread-count').textContent = `${spreadSel.length} / ${SPREAD_MAX} ${t.spreadSelected}`;
+  $('spread-total').textContent = `₹${total.toLocaleString('en-IN')}`;
+
+  const go = $('spread-go-btn');
+  const isReady = !spreadBusy && spreadBlobUrl && spreadBuiltKey === spreadKey(chosen.map(d => d.id)) && chosen.length > 0;
+  go.disabled = spreadBusy || !chosen.length;
+  go.classList.toggle('ready', !!isReady);
+  go.innerHTML = spreadBusy
+    ? `<span class="btn-spin"></span>${esc(t.spreadBuilding)}`
+    : `${SVG_CUBE}${esc(isReady ? t.spreadReady : t.spreadGo)}`;
+
+  $('spread-add-btn').textContent = t.spreadAddAll;
+  $('spread-add-btn').disabled = !chosen.length;
+}
+
+$('spread-list').addEventListener('click', e => {
+  const row = e.target.closest('[data-sp-id]');
+  if (row) toggleSpread(row.dataset.spId);
+});
+$('spread-list').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const row = e.target.closest('[data-sp-id]');
+  if (row) { e.preventDefault(); toggleSpread(row.dataset.spId); }
+});
+$('spread-preset-full').addEventListener('click', () => presetBalanced());
+$('spread-preset-cart').addEventListener('click', () => presetFromCart());
+$('spread-preset-clear').addEventListener('click', () => { spreadSel = []; renderSpreadModal(); });
+$('spread-close').addEventListener('click', closeSpreadModal);
+$('spread-modal').addEventListener('click', e => { if (e.target === $('spread-modal')) closeSpreadModal(); });
+$('spread-add-btn').addEventListener('click', () => {
+  const chosen = selectedSpreadDishes();
+  if (!chosen.length) { showToast(T().spreadNone); return; }
+  chosen.forEach(d => { if (getDishQty(d.id) <= 0) changeCartQty(d.id, 1, true); });
+  showToast(`✓ ${T().spreadAdded}`);
+});
+$('spread-go-btn').addEventListener('click', () => launchSpreadAR());
+$('spread-open-hero').addEventListener('click', () => openSpreadModal());
+$('spread-open-main').addEventListener('click', () => openSpreadModal());
+
+function configureViewerForSpread() {
+  spreadMode = true;
+  globalAR.classList.add('spread-mode');
+  // Scene Viewer can't open blob: URLs, so a spread uses WebXR (Android) / Quick Look (iOS) only.
+  globalAR.setAttribute('ar-modes', isIOS ? 'quick-look webxr' : 'webxr');
+  globalAR.removeAttribute('ios-src');         // let model-viewer generate the USDZ from the combined GLB
+  globalAR.setAttribute('scale', '1 1 1');     // per-dish scale is already baked into the combined model
+  globalAR.setAttribute('ar-placement', 'floor');
+  globalAR.setAttribute('ar-scale', 'fixed');
+  globalAR.setAttribute('shadow-intensity', '1');
+  globalAR.setAttribute('shadow-softness', '0.9');
+  applyARShadow();
+}
+
+function updateSpreadHUD() {
+  const t = T();
+  const chip = $('ar-spread-chip');
+  if (chip) {
+    const total = spreadDishes.reduce((s, d) => s + d.price, 0);
+    chip.textContent = `🍽️ ${t.spreadChip} · ${spreadDishes.length} ${t.spreadDishes} · ₹${total.toLocaleString('en-IN')}`;
+  }
+  refreshAllCartControls();
+}
+
+async function launchSpreadAR() {
+  if (spreadBusy) return;
+  const t = T();
+  const dishes = selectedSpreadDishes();
+  if (!dishes.length) { showToast(t.spreadNone); return; }
+  const key = spreadKey(dishes.map(d => d.id));
+  const t0 = Date.now();
+
+  spreadBusy = true;
+  renderSpreadModal();
+  try {
+    if (!spreadBlobUrl || spreadBuiltKey !== key) {
+      const url = await buildSpreadGLB(dishes);
+      const old = spreadBlobUrl;
+      spreadBlobUrl = url;
+      spreadBuiltKey = key;
+      if (old) setTimeout(() => URL.revokeObjectURL(old), 5000);
+    }
+    spreadDishes = dishes;
+    currentARDish = null;
+    configureViewerForSpread();
+    await ensureARSrc(spreadBlobUrl);
+
+    spreadBusy = false;
+    renderSpreadModal();
+
+    // Browsers need a fresh tap to start AR. If the build took long, ask for one more tap.
+    if (Date.now() - t0 > 3500) { showToast(t.spreadReadyToast); return; }
+    activateSpreadAR();
+  } catch (err) {
+    console.warn('Whole-table AR failed:', err);
+    spreadBusy = false;
+    spreadBuiltKey = '';
+    renderSpreadModal();
+    showToast(t.spreadFail);
+  }
+}
+
+/* Tap on an already-built spread: start AR immediately (keeps the user gesture alive) */
+function activateSpreadAR() {
+  try {
+    if (!spreadMode) configureViewerForSpread();
+    if (globalAR.getAttribute('src') !== spreadBlobUrl) {
+      globalAR.setAttribute('src', spreadBlobUrl);
+      launchSpreadAR();     // viewer was swapped meanwhile → reload it first
+      return;
+    }
+    if (globalAR.canActivateAR === false) {
+      showToast(T().spreadUnsupported);
+      return;
+    }
+    globalAR.activateAR();
+  } catch (err) {
+    console.warn('Whole-table AR activation failed:', err);
+    showToast(T().spreadUnsupported);
+  }
+}
+
+/* If the spread is already built for the current selection, the main button starts AR at once */
+(function wireSpreadGoShortcut() {
+  const btn = $('spread-go-btn');
+  btn.addEventListener('click', e => {
+    const chosen = selectedSpreadDishes();
+    if (spreadBusy || !chosen.length) return;
+    if (spreadBlobUrl && spreadBuiltKey === spreadKey(chosen.map(d => d.id)) && globalAR.getAttribute('src') === spreadBlobUrl && globalAR.loaded) {
+      e.stopImmediatePropagation();
+      spreadDishes = chosen;
+      configureViewerForSpread();
+      activateSpreadAR();
+    }
+  }, true);
+})();
+
+/* ───────────── "VIEW ORDER" → READY, TAP TO PLACE ON TABLE ─────────────
+   The spread for the guest's cart is built in the background every time the cart
+   changes, so by the time they open "View Order" it is already loaded in the AR
+   viewer and one tap starts AR. */
+let cartPrepState = 'idle';   // idle | building | ready | error
+let cartPrepKey = '';
+let cartPrepToken = 0;
+let cartPrepTimer = null;
+
+function cartSpreadDishes() {
+  return getCartTotals().items
+    .map(x => x.dish)
+    .filter(d => d.glbPath && d.available)
+    .sort((a, b) => catRank(a.category) - catRank(b.category))
+    .slice(0, SPREAD_MAX);
+}
+
+function cartSpreadReady(key) {
+  return !!key && spreadBuiltKey === key && !!spreadBlobUrl &&
+    globalAR.getAttribute('src') === spreadBlobUrl && globalAR.loaded === true;
+}
+
+async function prepareCartSpread() {
+  const dishes = cartSpreadDishes();
+  const key = spreadKey(dishes.map(d => d.id));
+  if (!dishes.length) { cartPrepState = 'idle'; cartPrepKey = ''; updateCartPlaceBtn(); return; }
+  if (globalAR.classList.contains('ar-active')) return;           // never touch the viewer during an AR session
+  if (cartSpreadReady(key)) { cartPrepState = 'ready'; cartPrepKey = key; updateCartPlaceBtn(); return; }
+
+  const token = ++cartPrepToken;
+  cartPrepState = 'building';
+  cartPrepKey = key;
+  updateCartPlaceBtn();
+  try {
+    if (spreadBuiltKey !== key || !spreadBlobUrl) {
+      const url = await buildSpreadGLB(dishes);
+      if (token !== cartPrepToken) { URL.revokeObjectURL(url); return; }   // cart changed meanwhile
+      const old = spreadBlobUrl;
+      spreadBlobUrl = url;
+      spreadBuiltKey = key;
+      if (old) setTimeout(() => URL.revokeObjectURL(old), 5000);
+    }
+    spreadDishes = dishes;
+    currentARDish = null;
+    configureViewerForSpread();
+    await ensureARSrc(spreadBlobUrl);
+    if (token !== cartPrepToken) return;
+    cartPrepState = 'ready';
+  } catch (err) {
+    console.warn('Could not prepare table spread:', err);
+    if (token !== cartPrepToken) return;
+    cartPrepState = 'error';
+  }
+  updateCartPlaceBtn();
+}
+
+function scheduleCartPrep() {
+  clearTimeout(cartPrepTimer);
+  cartPrepTimer = setTimeout(() => {
+    if (globalAR.classList.contains('ar-active')) return;
+    if (cartSpreadDishes().length) prepareCartSpread();
+  }, 450);
+}
+
+function updateCartPlaceBtn() {
+  const box = $('cart-place-box');
+  if (!box) return;
+  const t = T();
+  const dishes = cartSpreadDishes();
+  if (!dishes.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+
+  const key = spreadKey(dishes.map(d => d.id));
+  // Strip showing exactly which dishes will appear on the table
+  $('cart-place-strip').innerHTML = dishes.map(d => {
+    const q = getDishQty(d.id);
+    const thumb = d.posterPath
+      ? `<img src="${esc(d.posterPath)}" alt="" onerror="this.style.display='none'">`
+      : `<span>${d.emoji}</span>`;
+    return `<span class="cp-chip"><span class="cp-thumb">${thumb}</span>${esc(d.name)}${q > 1 ? ` ×${q}` : ''}</span>`;
+  }).join('');
+
+  const btn = $('cart-place-btn');
+  const ready = cartPrepKey === key && cartPrepState === 'ready' && cartSpreadReady(key);
+  const building = cartPrepKey === key && cartPrepState === 'building';
+  const failed = cartPrepKey === key && cartPrepState === 'error';
+
+  btn.classList.toggle('ready', ready);
+  btn.disabled = building;
+  if (ready) btn.innerHTML = `${SVG_CUBE}${esc(t.spreadReady)}`;
+  else if (building) btn.innerHTML = `<span class="btn-spin"></span>${esc(t.spreadBuilding)}`;
+  else if (failed) btn.innerHTML = `${SVG_CUBE}${esc(t.retry)}`;
+  else {
+    btn.innerHTML = `<span class="btn-spin"></span>${esc(t.spreadBuilding)}`;
+    btn.disabled = true;
+    setTimeout(prepareCartSpread, 0);   // cart changed, or the viewer was used for another dish → get ready again
+  }
+}
+
+$('cart-place-btn').addEventListener('click', () => {
+  const dishes = cartSpreadDishes();
+  if (!dishes.length) { showToast(T().spreadNoCart); return; }
+  const key = spreadKey(dishes.map(d => d.id));
+  if (cartPrepState === 'ready' && cartPrepKey === key && cartSpreadReady(key)) {
+    // Everything is already loaded → start AR instantly (keeps the tap gesture alive)
+    spreadDishes = dishes;
+    currentARDish = null;
+    configureViewerForSpread();
+    activateSpreadAR();
+    return;
+  }
+  if (cartPrepState !== 'building') { cartPrepKey = ''; prepareCartSpread(); }
+});
+
+function updateSpreadEntryPoints() {
+  const has = getARDishes().length > 0;
+  $('spread-open-hero').style.display = has ? '' : 'none';
+  $('spread-cta-row').style.display = has ? '' : 'none';
 }
 
 /* ───────────── MODAL + AR + ZOOM ───────────── */
@@ -2245,22 +2102,11 @@ function openModal(id, autoStart3D = false) {
   if (d.glbPath) {
     const arBtnWrap = document.createElement('div');
     arBtnWrap.className = 'mv-ar-btn-wrap';
-    arBtnWrap.style.cssText = 'position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;width:92%;';
-    arBtnWrap.innerHTML = `
-      <button class="modal-ar-launch-btn" type="button">${SVG_CUBE}${esc(t.viewTable)}</button>
-      <button class="modal-ar-launch-btn modal-combo-btn" type="button" style="background:rgba(20,4,5,.88);color:var(--gold-lt);border-color:var(--gold);padding:11px 18px;font-size:11px;">🍱 + Combo Spread</button>
-    `;
+    arBtnWrap.style.cssText = 'position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:10px;align-items:center;';
+    arBtnWrap.innerHTML = `<button class="modal-ar-launch-btn" type="button">${SVG_CUBE}${esc(t.viewTable)}</button>`;
     vw.insertBefore(arBtnWrap, arBadge);
     const modalBtn = arBtnWrap.querySelector('.modal-ar-launch-btn');
-    modalBtn.addEventListener('pointerdown', () => warmAR(d), { passive: true });
     modalBtn.addEventListener('click', () => launchDirectAR(d.id, modalBtn));
-    const comboBtn = arBtnWrap.querySelector('.modal-combo-btn');
-    comboBtn.addEventListener('click', () => {
-      closeModal();
-      const defaults = getDefault3CourseDishes().map(x => x.id);
-      if (!defaults.includes(d.id)) defaults[0] = d.id;
-      openSpreadModal(defaults);
-    });
     if (autoStart3D) loadModelInModal(d, vw, arBadge, arBtnWrap, photoWrap);
   }
 
@@ -2409,6 +2255,7 @@ function jumpToCategory(cat) {
   scrollToShow(i);
 }
 
+/* Showcase scrolling no longer changes the Full Menu list below */
 function setShowDish(idx) {
   showIdx = idx;
   const d = showList[idx], n = showList.length, t = T();
@@ -2528,31 +2375,37 @@ function applyUIText() {
   $('ui-step-2').textContent        = t.s2;
   $('ui-step-3').textContent        = t.s3;
   $('ui-hp1').textContent           = t.hp1;
+  $('ui-hp2').textContent           = t.hp2;
   $('ui-hp3').textContent           = t.hp3;
   $('ui-scroll').textContent        = t.scroll;
   $('ui-full-menu').textContent     = t.fullMenu;
   $('ui-view-cart').textContent     = t.viewCart;
   $('ui-order-summary').textContent = t.orderSummary;
   $('ui-send-wa').textContent       = t.sendWA;
-  if ($('ui-top-spread')) $('ui-top-spread').textContent = t.topSpread;
-  if ($('ui-hero-spread-btn')) $('ui-hero-spread-btn').textContent = t.heroSpreadBtn;
-  if ($('ui-cb-title')) $('ui-cb-title').textContent = t.cbTitle;
-  if ($('ui-cb-desc')) $('ui-cb-desc').textContent = t.cbDesc;
-  if ($('ui-cb-launch')) $('ui-cb-launch').textContent = t.cbLaunch;
-  if ($('ui-cb-customize')) $('ui-cb-customize').textContent = t.cbCustomize;
+  $('ui-spread-hero').textContent   = t.spreadHero;
+  $('ui-spread-main').textContent   = t.spreadMain;
+  $('ui-spread-title').textContent  = t.spreadTitle;
+  $('ui-spread-sub').textContent    = t.spreadSub;
+  $('ui-spread-note').textContent   = t.spreadNote;
+  $('spread-preset-full').textContent  = t.spreadFull;
+  $('spread-preset-cart').textContent  = t.spreadMine;
+  $('spread-preset-clear').textContent = t.spreadClear;
   const arLabel = $('ar-carousel-label');
   if (arLabel) arLabel.textContent = t.arSwipe;
   $('sc-ar').innerHTML              = SVG_CUBE + esc(t.viewTable);
   $('search').placeholder           = t.search;
   document.documentElement.lang = currentLang;
   updateTablePill();
+  if ($('spread-modal').classList.contains('open')) renderSpreadModal();
 }
 
 $('lang-select').addEventListener('change', e => {
   currentLang = e.target.value;
   applyUIText();
   allDishes = rawRows.map(rowToDish).filter(d => d.name);
-  renderTabs(); renderItems(); renderShowcase(); renderARCarousel(); renderComboBannerPreview();
+  renderTabs(); renderItems(); renderShowcase(); renderARCarousel();
+  updateSpreadEntryPoints();
+  if (spreadMode) updateSpreadHUD();
   refreshAllCartControls();
 });
 
@@ -2569,7 +2422,8 @@ async function init() {
     if (!allDishes.length) throw new Error('No dishes found.');
     loadingEl.style.display = 'none';
     container.style.display = 'block';
-    renderTabs(); renderItems(); renderShowcase(); renderARCarousel(); renderComboBannerPreview();
+    renderTabs(); renderItems(); renderShowcase(); renderARCarousel();
+    updateSpreadEntryPoints();
     refreshAllCartControls();
     preloadModels();
   } catch (err) {
