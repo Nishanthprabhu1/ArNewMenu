@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://unpkg.com" />
+<link rel="preconnect" href="https://esm.sh" />
 <link rel="modulepreload" href="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" />
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Outfit:wght@500;700;800&family=Inter:wght@300;400;500;600&family=Noto+Sans+Kannada:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600&family=Noto+Sans+Malayalam:wght@400;500;600&family=Noto+Sans+Telugu:wght@400;500;600&display=swap" rel="stylesheet" />
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
@@ -147,7 +148,8 @@ model-viewer::part(default-ar-button),model-viewer::part(default-exit-webxr-ar-b
 .cb-mini-chip b{color:var(--gold-lt);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
 .cb-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;flex-shrink:0}
 .cb-launch-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--gold-grad);color:var(--red-900);border:1px solid #fff;border-radius:999px;padding:13px 22px;font:800 12.5px var(--f-sans);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.35);transition:transform .2s var(--ease),box-shadow .2s}
-.cb-launch-btn:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.5)}
+.cb-launch-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.5)}
+.cb-launch-btn:disabled{opacity:.8;cursor:progress}
 .cb-launch-btn svg{width:17px;height:17px;stroke:var(--red-900);fill:none;stroke-width:2.2}
 .cb-custom-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(246,224,163,.55);border-radius:999px;padding:12px 18px;font:700 12px var(--f-sans);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:background .2s,transform .2s}
 .cb-custom-btn:hover{background:rgba(255,255,255,.24);transform:translateY(-1px)}
@@ -744,15 +746,15 @@ model-viewer[ar-status="object-placed"] .ar-placement-hint{opacity:0}
           <span class="spread-sum-count" id="spread-sum-count">3 Dishes on Table</span>
           <span class="spread-sum-price" id="spread-sum-price">₹0</span>
         </div>
-        <div style="font-size:11px;color:var(--ink-soft);text-align:right;max-width:170px;">
-          Arranged side-by-side at real portion size
+        <div style="font-size:11px;color:var(--ink-soft);text-align:right;max-width:170px;" id="spread-ready-hint">
+          Preparing 3D spread…
         </div>
       </div>
 
       <div class="spread-cta-row">
         <button type="button" class="spread-ar-go" id="spread-launch-ar-btn">
           <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          <span>Place Spread on Table (AR)</span>
+          <span id="spread-launch-ar-text">Place Spread on Table (AR)</span>
         </button>
         <button type="button" class="spread-order-all" id="spread-add-cart-btn">
           + Add All to Order
@@ -920,7 +922,7 @@ const I18N = {
         search: 'వంటకాలను వెతకండి…', vegOnly: 'శాఖాహారం మాత్రమే', empty: 'వంటకాలు కనబడలేదు', viewAR: 'టేబుల్‌పై చూడండి', viewTable: 'టేబుల్‌పై చూడండి',
         launching: 'లోడ్ అవుతోంది…', launch: 'AR ప్రారంభించండి', retry: 'మళ్లీ', pick: 'చెఫ్ ఎంపిక', isNew: 'కొత్త',
         portion: 'అసలు పరిమాణం', footer: '3Dలో చూడటానికి వంటకాన్ని నొక్కండి · ధరలు ₹ · 🌿 శాఖాహారం అందుబాటులో',
-        footer2: 'ARకు అనుకూల మొಬైల్ అవసరం', arReady: '✦ AR సిద్ధం',
+        footer2: 'ARకు అనుకూల మొబైల్ అవసరం', arReady: '✦ AR సిద్ధం',
         s1: 'స్కాన్', s2: 'ఉంచండి', s3: 'అనుభవించండి', showcase: 'చెఫ్ షోకేస్', scroll: 'స్క్రోల్ చేయండి',
         fullMenu: 'పూర్తి మెనూ',
         arSwipe: 'వంటకం మార్చడానికి ట్యాప్ చేయండి', add: 'జోడించు', viewCart: 'ఆర్డర్ చూడండి', sendWA: 'WhatsApp ద్వారా ఆర్డర్ పంపండి',
@@ -954,12 +956,11 @@ function showToast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
 /* ───────────── TABLE NUMBER (FROM ?table=5 OR SESSION) & CART STATE ───────────── */
 let tableNumber = '';
-// cart structure: { [dishId]: { qty: number, note: string } }
 let cart = {};
 let generalOrderNote = '';
 
@@ -1320,7 +1321,6 @@ function catLabel(cat) {
   return map ? (map[currentLang] || map.en) : (cat.charAt(0).toUpperCase() + cat.slice(1).replace(/-/g, ' '));
 }
 
-/* Tabs now only jump the 3D showcase; the Full Menu list below always shows every category */
 function renderTabs() {
   const cats = ['all', 'starter', 'main-course', 'dessert'];
   const wrap = $('tabs-inner');
@@ -1375,8 +1375,6 @@ function bindCardTilt(card) {
   card.addEventListener('pointerleave', () => { card.style.setProperty('--hry', '0deg'); card.style.setProperty('--hrx', '0deg'); });
 }
 
-/* FULL MENU LIST — always every category, in Starter → Main → Dessert → Other order.
-   Only the search box and the Veg-only toggle narrow it down. */
 function renderItems() {
   const q = query.trim().toLowerCase();
   const filtered = allDishes.filter(d =>
@@ -1407,45 +1405,47 @@ function renderItems() {
 }
 
 /* ───────────── COMBO / WHOLE-TABLE MULTI-DISH 3D & AR COMPOSER ───────────── */
+const globalAR = $('global-ar-viewer');
 let threeLibsPromise = null;
 const gltfSceneCache = new Map();
-const spreadBlobCache = new Map();
+const spreadBlobCache = new Map(); // cacheKey -> { glbUrl, usdzUrl, scale }
 let selectedSpreadIds = [];
 let isSpreadARActive = false;
 let activeSpreadDishes = [];
-let activeSpreadBlobUrl = '';
+let preparedSpreadBundle = null; // Holds pre-built { glbUrl, usdzUrl, scale, dishes } ready for 1-tap synchronous AR launch
+let isPreparingSpread = false;
 
 async function loadThreeSpreadComposerLibs() {
   if (!threeLibsPromise) {
     threeLibsPromise = Promise.all([
       import('https://esm.sh/three@0.160.0'),
       import('https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js'),
-      import('https://esm.sh/three@0.160.0/examples/jsm/exporters/GLTFExporter.js')
-    ]).then(([THREE, { GLTFLoader }, { GLTFExporter }]) => ({ THREE, GLTFLoader, GLTFExporter }));
+      import('https://esm.sh/three@0.160.0/examples/jsm/exporters/GLTFExporter.js'),
+      import('https://esm.sh/three@0.160.0/examples/jsm/exporters/USDZExporter.js')
+    ]).then(([THREE, { GLTFLoader }, { GLTFExporter }, { USDZExporter }]) => ({
+      THREE, GLTFLoader, GLTFExporter, USDZExporter
+    }));
   }
   return threeLibsPromise;
 }
 
-// Compute natural table coordinates (in meters) for N dishes (Starter, Main, Dessert, or circular banquet)
 function getTableSpreadLayoutOffsets(count) {
   if (count <= 1) return [{ x: 0, z: 0, rotY: 0 }];
   if (count === 2) {
     return [
-      { x: -0.17, z: 0.02, rotY: 0.15 },
-      { x:  0.17, z: -0.02, rotY: -0.15 }
+      { x: -0.18, z: 0.02, rotY: 0.15 },
+      { x:  0.18, z: -0.02, rotY: -0.15 }
     ];
   }
   if (count === 3) {
-    // Classic 3-Course triangle spread: Starter (front-left), Main Course (center), Dessert (back-right)
     return [
-      { x: -0.24, z: 0.07, rotY: 0.22 },
-      { x:  0.00, z: -0.04, rotY: 0.00 },
-      { x:  0.24, z: 0.07, rotY: -0.22 }
+      { x: -0.25, z: 0.08, rotY: 0.22 },
+      { x:  0.00, z: -0.05, rotY: 0.00 },
+      { x:  0.25, z: 0.08, rotY: -0.22 }
     ];
   }
-  // 4+ dishes: ergonomic oval table spread
-  const radiusX = 0.27;
-  const radiusZ = 0.19;
+  const radiusX = 0.28;
+  const radiusZ = 0.20;
   return Array.from({ length: count }, (_, i) => {
     const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
     return {
@@ -1456,19 +1456,25 @@ function getTableSpreadLayoutOffsets(count) {
   });
 }
 
-async function buildCombinedSpreadGLBUrl(dishes) {
+async function buildCombinedSpreadBundle(dishes) {
   const valid = dishes.filter(d => d && d.glbPath);
   if (!valid.length) throw new Error('No 3D dishes selected');
   if (valid.length === 1) {
-    return { url: valid[0].glbPath, scale: valid[0].scale ?? 1 };
+    return {
+      glbUrl: valid[0].glbPath,
+      usdzUrl: valid[0].usdzPath || '',
+      scale: valid[0].scale ?? 1,
+      isBlob: false,
+      dishes: valid
+    };
   }
 
   const cacheKey = valid.map(d => d.id).join('__');
   if (spreadBlobCache.has(cacheKey)) {
-    return { url: spreadBlobCache.get(cacheKey), scale: 1 };
+    return spreadBlobCache.get(cacheKey);
   }
 
-  const { THREE, GLTFLoader, GLTFExporter } = await loadThreeSpreadComposerLibs();
+  const { THREE, GLTFLoader, GLTFExporter, USDZExporter } = await loadThreeSpreadComposerLibs();
   const loader = new GLTFLoader();
   const rootScene = new THREE.Scene();
   const offsets = getTableSpreadLayoutOffsets(valid.length);
@@ -1488,7 +1494,6 @@ async function buildCombinedSpreadGLBUrl(dishes) {
     clone.scale.set(s, s, s);
     clone.updateMatrixWorld(true);
 
-    // Center each dish horizontally and sit its base flush on the table surface (y = 0)
     const box = new THREE.Box3().setFromObject(clone);
     const center = new THREE.Vector3();
     box.getCenter(center);
@@ -1504,20 +1509,85 @@ async function buildCombinedSpreadGLBUrl(dishes) {
   }
 
   rootScene.updateMatrixWorld(true);
-  const exporter = new GLTFExporter();
-  const arrayBuffer = await new Promise((resolve, reject) => {
-    exporter.parse(
+
+  // 1) Export combined GLB for WebXR / 3D Viewer
+  const gltfExporter = new GLTFExporter();
+  const glbBuffer = await new Promise((resolve, reject) => {
+    gltfExporter.parse(
       rootScene,
-      result => resolve(result),
+      res => resolve(res),
       err => reject(err),
       { binary: true }
     );
   });
+  const glbBlob = new Blob([glbBuffer], { type: 'model/gltf-binary' });
+  const glbUrl = URL.createObjectURL(glbBlob);
 
-  const blob = new Blob([arrayBuffer], { type: 'model/gltf-binary' });
-  const blobUrl = URL.createObjectURL(blob);
-  spreadBlobCache.set(cacheKey, blobUrl);
-  return { url: blobUrl, scale: 1 };
+  // 2) Export combined USDZ on iOS so Apple Quick Look can place the whole spread
+  let usdzUrl = '';
+  if (isIOS && USDZExporter) {
+    try {
+      const usdzExporter = new USDZExporter();
+      const usdzBuffer = await usdzExporter.parse(rootScene);
+      const usdzBlob = new Blob([usdzBuffer], { type: 'model/vnd.usdz+zip' });
+      usdzUrl = URL.createObjectURL(usdzBlob);
+    } catch (uErr) {
+      console.warn('USDZ multi-dish export fallback:', uErr);
+    }
+  }
+
+  const bundle = { glbUrl, usdzUrl, scale: 1, isBlob: true, dishes: valid };
+  spreadBlobCache.set(cacheKey, bundle);
+  return bundle;
+}
+
+// Pre-loads the combined spread into `#global-ar-viewer` BEFORE the user clicks "Place Spread",
+// so that `globalAR.activateAR()` can be called synchronously inside the click handler!
+async function stageSpreadIntoGlobalAR(dishes) {
+  const valid = dishes.filter(d => d && d.glbPath);
+  if (!valid.length) return null;
+  isPreparingSpread = true;
+  const bundle = await buildCombinedSpreadBundle(valid);
+  preparedSpreadBundle = bundle;
+  activeSpreadDishes = valid;
+  isSpreadARActive = true;
+  currentARDish = valid[0];
+
+  const s = Number(bundle.scale || 1).toFixed(4);
+  globalAR.setAttribute('scale', `${s} ${s} ${s}`);
+  globalAR.setAttribute('ar-placement', 'floor');
+  globalAR.setAttribute('ar-scale', 'fixed');
+  globalAR.setAttribute('shadow-intensity', '1');
+  globalAR.setAttribute('shadow-softness', '0.9');
+
+  // CRITICAL FIX: Android Scene Viewer cannot load `blob:` URLs.
+  // When using an in-memory merged blob URL, use `webxr quick-look` so Android launches WebXR directly.
+  if (bundle.isBlob) {
+    globalAR.setAttribute('ar-modes', 'webxr quick-look');
+  } else {
+    globalAR.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
+  }
+
+  if (bundle.usdzUrl) {
+    globalAR.setAttribute('ios-src', bundle.usdzUrl);
+  } else {
+    globalAR.removeAttribute('ios-src');
+  }
+
+  if (globalAR.getAttribute('src') !== bundle.glbUrl) {
+    await new Promise(resolve => {
+      const done = () => {
+        globalAR.removeEventListener('load', done);
+        globalAR.removeEventListener('error', done);
+        resolve();
+      };
+      globalAR.addEventListener('load', done);
+      globalAR.addEventListener('error', done);
+      globalAR.setAttribute('src', bundle.glbUrl);
+    });
+  }
+  isPreparingSpread = false;
+  return bundle;
 }
 
 function getDefault3CourseDishes() {
@@ -1620,7 +1690,6 @@ function syncSlotsToSelectedIds() {
     $('spread-slot-main').value,
     $('spread-slot-dessert').value
   ].filter(Boolean);
-  // Deduplicate while preserving order
   selectedSpreadIds = [...new Set(ids)];
   renderSpreadChipsPool();
   updateSpreadModalSummaryAndPreview();
@@ -1640,21 +1709,35 @@ async function updateSpreadModalSummaryAndPreview() {
   const statusEl = $('spread-viewer-status');
   const statusTxt = $('spread-status-text');
   const previewMV = $('spread-preview-mv');
+  const goBtn = $('spread-launch-ar-btn');
+  const goTxt = $('spread-launch-ar-text');
+  const hintEl = $('spread-ready-hint');
   if (!dishes.length) return;
 
   statusEl.classList.remove('hidden');
   statusTxt.textContent = `Composing ${dishes.length}-Dish 3D Spread…`;
+  goBtn.disabled = true;
+  goTxt.textContent = 'Preparing Spread…';
+  if (hintEl) hintEl.textContent = 'Building 3D table layout…';
 
   try {
-    const { url, scale } = await buildCombinedSpreadGLBUrl(dishes);
-    const s = Number(scale || 1).toFixed(4);
-    previewMV.setAttribute('scale', `${s} ${s} ${s}`);
-    previewMV.setAttribute('src', url);
+    // Stage into BOTH the modal preview AND `#global-ar-viewer` so tapping "Place Spread on Table (AR)" is instant & synchronous!
+    const bundle = await stageSpreadIntoGlobalAR(dishes);
+    if (bundle) {
+      const s = Number(bundle.scale || 1).toFixed(4);
+      previewMV.setAttribute('scale', `${s} ${s} ${s}`);
+      previewMV.setAttribute('src', bundle.glbUrl);
+    }
     statusEl.classList.add('hidden');
+    goBtn.disabled = false;
+    goTxt.textContent = 'Place Spread on Table (AR)';
+    if (hintEl) hintEl.textContent = '✦ AR Spread Ready · Tap below to place';
   } catch (err) {
     console.warn('Spread preview compose error:', err);
-    statusTxt.textContent = 'Ready for AR Table Placement';
-    setTimeout(() => statusEl.classList.add('hidden'), 1000);
+    statusEl.classList.add('hidden');
+    goBtn.disabled = false;
+    goTxt.textContent = 'Place Spread on Table (AR)';
+    if (hintEl) hintEl.textContent = 'Ready for 3D / AR';
   }
 }
 
@@ -1719,35 +1802,65 @@ $('spread-add-cart-btn').addEventListener('click', () => {
   showToast(`✓ Added ${dishes.length} spread dishes to your order`);
 });
 
-$('spread-launch-ar-btn').addEventListener('click', e => {
-  const dishes = selectedSpreadIds.map(id => allDishes.find(d => d.id === id)).filter(Boolean);
-  if (!dishes.length) {
-    showToast('Select at least one dish');
+// SYNCHRONOUS AR ACTIVATION FROM SPREAD MODAL (preserves mobile browser user gesture!)
+function triggerPreparedSpreadARNow() {
+  if (!preparedSpreadBundle) {
+    showToast('Still preparing 3D models, please tap again in a moment');
     return;
   }
-  launchSpreadAR(dishes, e.currentTarget);
+
+  // iOS Quick Look direct launch using generated USDZ blob
+  if (isIOS && preparedSpreadBundle.usdzUrl) {
+    const a = document.createElement('a');
+    a.setAttribute('rel', 'ar');
+    a.setAttribute('href', preparedSpreadBundle.usdzUrl);
+    const img = document.createElement('img');
+    a.appendChild(img);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return;
+  }
+
+  renderARCarousel();
+  refreshAllCartControls();
+  $('ar-spread-mode-btn').classList.add('active');
+  closeSpreadModal();
+
+  try {
+    globalAR.activateAR();
+  } catch (err) {
+    console.warn('Direct Spread AR activation failed:', err);
+    showToast('AR requires a compatible mobile browser (Chrome on Android or Safari on iOS)');
+  }
+}
+
+$('spread-launch-ar-btn').addEventListener('click', () => {
+  triggerPreparedSpreadARNow();
 });
 
 $('hero-top-spread-btn').addEventListener('click', () => openSpreadModal());
 $('hero-spread-cta').addEventListener('click', () => openSpreadModal());
 $('cb-open-builder-btn').addEventListener('click', () => openSpreadModal());
-$('cb-quick-launch-btn').addEventListener('click', e => {
-  const dishes = getDefault3CourseDishes();
-  if (dishes.length) launchSpreadAR(dishes, e.currentTarget);
+
+// Quick launch button on the banner: if the default 3-course spread is already pre-warmed, launch AR synchronously; otherwise open builder modal
+$('cb-quick-launch-btn').addEventListener('click', () => {
+  const defaults = getDefault3CourseDishes();
+  if (preparedSpreadBundle && isSpreadARActive && globalAR.loaded) {
+    triggerPreparedSpreadARNow();
+  } else {
+    openSpreadModal(defaults.map(d => d.id));
+  }
 });
 
 $('fc-spread-ar-btn').addEventListener('click', e => {
   e.stopPropagation();
   const { items } = getCartTotals();
   const cartAR = items.map(x => x.dish).filter(d => d.glbPath);
-  if (cartAR.length) {
-    launchSpreadAR(cartAR.slice(0, 6), e.currentTarget);
-  } else {
-    openSpreadModal();
-  }
+  openSpreadModal(cartAR.length ? cartAR.slice(0, 6).map(d => d.id) : null);
 });
 
-$('cart-view-spread-ar-btn').addEventListener('click', e => {
+$('cart-view-spread-ar-btn').addEventListener('click', () => {
   const { items } = getCartTotals();
   const cartAR = items.map(x => x.dish).filter(d => d.glbPath);
   if (!cartAR.length) {
@@ -1755,73 +1868,10 @@ $('cart-view-spread-ar-btn').addEventListener('click', e => {
     return;
   }
   closeCartModal();
-  launchSpreadAR(cartAR.slice(0, 6), e.currentTarget);
+  openSpreadModal(cartAR.slice(0, 6).map(d => d.id));
 });
 
-async function launchSpreadAR(dishes, triggerBtn) {
-  const valid = dishes.filter(d => d && d.glbPath);
-  if (!valid.length) return;
-
-  const origHTML = triggerBtn ? triggerBtn.innerHTML : '';
-  if (triggerBtn) {
-    triggerBtn.disabled = true;
-    triggerBtn.innerHTML = `<span class="btn-spin"></span> Composing ${valid.length} Dishes…`;
-  }
-
-  try {
-    const { url, scale } = await buildCombinedSpreadGLBUrl(valid);
-    isSpreadARActive = true;
-    activeSpreadDishes = valid;
-    activeSpreadBlobUrl = url;
-    currentARDish = valid[0];
-
-    const s = Number(scale || 1).toFixed(4);
-    globalAR.setAttribute('scale', `${s} ${s} ${s}`);
-    globalAR.setAttribute('ar-placement', 'floor');
-    globalAR.setAttribute('ar-scale', 'fixed');
-    globalAR.setAttribute('shadow-intensity', '1');
-    globalAR.setAttribute('shadow-softness', '0.9');
-    globalAR.removeAttribute('ios-src');
-
-    renderARCarousel();
-    refreshAllCartControls();
-    $('ar-spread-mode-btn').classList.add('active');
-
-    await new Promise((resolve, reject) => {
-      if (globalAR.getAttribute('src') === url && globalAR.loaded) return resolve();
-      const cleanup = () => { globalAR.removeEventListener('load', ok); globalAR.removeEventListener('error', bad); };
-      const ok = () => { cleanup(); resolve(); };
-      const bad = () => { cleanup(); reject(new Error('Spread GLB load failed')); };
-      globalAR.addEventListener('load', ok);
-      globalAR.addEventListener('error', bad);
-      globalAR.setAttribute('src', url);
-    });
-
-    if (triggerBtn) {
-      triggerBtn.disabled = false;
-      triggerBtn.innerHTML = origHTML;
-    }
-
-    closeSpreadModal();
-    try {
-      globalAR.activateAR();
-    } catch (arErr) {
-      console.warn('AR activation fallback to 3D spread modal:', arErr);
-      openSpreadModal(valid.map(d => d.id));
-    }
-  } catch (err) {
-    console.warn('Could not compose whole-table spread:', err);
-    if (triggerBtn) {
-      triggerBtn.disabled = false;
-      triggerBtn.innerHTML = origHTML;
-    }
-    showToast('Opening 3D Spread Builder…');
-    openSpreadModal(valid.map(d => d.id));
-  }
-}
-
 /* ───────────── DIRECT AR LAUNCHER + DISH CAROUSEL HUD ───────────── */
-const globalAR = $('global-ar-viewer');
 let currentARDish = null;
 let lastCapturedDataUrl = '';
 
@@ -1843,19 +1893,26 @@ function preloadModels() {
     for (const d of getARDishes()) {
       try { await fetch(isIOS && d.usdzPath ? d.usdzPath : d.glbPath); } catch (e) {}
     }
-    const first = getARDishes()[0];
-    if (first) warmAR(first);
+    // Pre-build the default 3-Course Spread in the background so it's ready right away
+    const defaults = getDefault3CourseDishes();
+    if (defaults.length) {
+      try { await stageSpreadIntoGlobalAR(defaults); } catch (e) {}
+    }
   };
-  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(run);
+  (window.requestIdleCallback || (f => setTimeout(f, 1200)))(run);
 }
 
 function warmAR(d) {
   if (isIOS || !d || !d.glbPath) return;
+  isSpreadARActive = false;
+  globalAR.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
+  applyARSize(d);
   if (globalAR.getAttribute('src') !== d.glbPath) globalAR.setAttribute('src', d.glbPath);
 }
 
 function ensureARModel(d) {
   return new Promise((resolve, reject) => {
+    globalAR.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
     if (globalAR.getAttribute('src') === d.glbPath && globalAR.loaded) return resolve();
     const cleanup = () => { globalAR.removeEventListener('load', ok); globalAR.removeEventListener('error', bad); };
     const ok = () => { cleanup(); resolve(); };
@@ -1940,13 +1997,13 @@ async function switchToSpreadInAR() {
   const dishes = activeSpreadDishes.length ? activeSpreadDishes : getDefault3CourseDishes();
   if (!dishes.length) return;
   try {
-    const { url, scale } = await buildCombinedSpreadGLBUrl(dishes);
+    const bundle = await buildCombinedSpreadBundle(dishes);
     isSpreadARActive = true;
     activeSpreadDishes = dishes;
-    activeSpreadBlobUrl = url;
-    const s = Number(scale || 1).toFixed(4);
+    preparedSpreadBundle = bundle;
+    const s = Number(bundle.scale || 1).toFixed(4);
     globalAR.setAttribute('scale', `${s} ${s} ${s}`);
-    if (globalAR.getAttribute('src') !== url) globalAR.setAttribute('src', url);
+    if (globalAR.getAttribute('src') !== bundle.glbUrl) globalAR.setAttribute('src', bundle.glbUrl);
     $('ar-spread-mode-btn').classList.add('active');
     renderARCarousel();
     refreshAllCartControls();
@@ -1978,6 +2035,7 @@ function switchARDish(id) {
   currentARDish = d;
   $('ar-spread-mode-btn').classList.remove('active');
 
+  globalAR.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
   applyARSize(d);
   if (d.usdzPath) globalAR.setAttribute('ios-src', d.usdzPath);
   if (globalAR.getAttribute('src') !== d.glbPath) globalAR.setAttribute('src', d.glbPath);
@@ -2093,16 +2151,26 @@ function launchDirectAR(id, triggerBtn) {
     return;
   }
 
+  globalAR.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
+  applyARShadow();
+  applyARSize(d);
+  if (d.usdzPath) globalAR.setAttribute('ios-src', d.usdzPath);
+
+  // If the dish model is already warm & loaded, activate AR synchronously on the click gesture!
+  if (globalAR.getAttribute('src') === d.glbPath && globalAR.loaded) {
+    renderARCarousel();
+    try {
+      globalAR.activateAR();
+      return;
+    } catch (e) {}
+  }
+
   if (triggerBtn) {
     triggerBtn.disabled = true;
     triggerBtn.innerHTML = `<span class="btn-spin"></span>${esc(t.launching)}`;
   }
 
   renderARCarousel();
-  applyARShadow();
-
-  applyARSize(d);
-  if (d.usdzPath) globalAR.setAttribute('ios-src', d.usdzPath);
 
   const restoreBtn = () => {
     if (triggerBtn) {
@@ -2184,6 +2252,7 @@ function openModal(id, autoStart3D = false) {
     `;
     vw.insertBefore(arBtnWrap, arBadge);
     const modalBtn = arBtnWrap.querySelector('.modal-ar-launch-btn');
+    modalBtn.addEventListener('pointerdown', () => warmAR(d), { passive: true });
     modalBtn.addEventListener('click', () => launchDirectAR(d.id, modalBtn));
     const comboBtn = arBtnWrap.querySelector('.modal-combo-btn');
     comboBtn.addEventListener('click', () => {
@@ -2340,7 +2409,6 @@ function jumpToCategory(cat) {
   scrollToShow(i);
 }
 
-/* Showcase scrolling no longer changes the Full Menu list below */
 function setShowDish(idx) {
   showIdx = idx;
   const d = showList[idx], n = showList.length, t = T();
