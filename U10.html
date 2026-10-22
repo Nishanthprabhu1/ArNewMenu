@@ -19,6 +19,11 @@
   }
 }
 </script>
+<!-- Start downloading the 3D models while the page is still parsing (before any JS runs) -->
+<link rel="preload" as="fetch" crossorigin href="3d-model/Fried-Calamari/Fried-Calamari.glb" />
+<link rel="preload" as="fetch" crossorigin href="3d-model/Cheesy-Green-Lasagne/Cheesy-Green-Lasagne.glb" />
+<link rel="preload" as="fetch" crossorigin href="3d-model/Pinocchio-Tiramisu/Pinocchio-Tiramisu.glb" />
+<link rel="preload" as="fetch" crossorigin href="3d-model/Pistachio-Sauce-Bigne-with-Ricotta/Pistachio-Sauce-Bigne-with-Ricotta.glb" />
 <link rel="modulepreload" href="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" />
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 <style>
@@ -835,6 +840,12 @@ const LOCAL_ASSETS = {
   'fried-calamari':                     { folder: 'Fried-Calamari',                     file: 'Fried-Calamari',                     scale: 0.75 }
 };
 
+/* Fetch every dish model immediately (in parallel, before the menu sheet even loads) so they are
+   already in the browser cache when a 3D viewer asks for them. */
+Object.values(LOCAL_ASSETS).forEach(a => {
+  try { fetch(`${ASSETS_BASE}/${a.folder}/${a.file}.glb`, { cache: 'force-cache' }).catch(() => {}); } catch (e) {}
+});
+
 const EMOJI_MAP = {
   'pistachio-sauce-bigne-with-ricotta': '🍮', 'pinocchio-tiramisu': '🍰', 'cheesy-green-lasagne': '🧀', 'fried-calamari': '🦑',
 };
@@ -1494,8 +1505,11 @@ function preloadModels() {
     loadThreeLib()
       .then(() => Promise.all(getARDishes().map(d => getGLTFScene(d.glbPath))))
       .catch(() => {});
-    for (const d of getARDishes()) {
-      try { await fetch(isIOS && d.usdzPath ? d.usdzPath : d.glbPath); } catch (e) {}
+    if (isIOS) {
+      // GLBs are already fetched at startup; on iPhone also pre-fetch the USDZ used by AR Quick Look
+      for (const d of getARDishes()) {
+        if (d.usdzPath) { try { await fetch(d.usdzPath); } catch (e) {} }
+      }
     }
     const first = getARDishes()[0];
     if (first) warmAR(first);
@@ -2210,7 +2224,7 @@ function updateSpreadEntryPoints() {
 }
 
 /* ───────────── MODAL + AR + ZOOM ───────────── */
-function openModal(id, autoStart3D = false) {
+function openModal(id, autoStart3D = true) {   // 3D now starts loading instantly when a dish is opened
   const d = allDishes.find(x => x.id === id);
   if (!d) return;
   currentModalDishId = d.id;
